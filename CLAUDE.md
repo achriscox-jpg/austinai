@@ -22,7 +22,3 @@ Chris Cox is building a tool that reads a batch of case-manager emails, extracts
 - `brief.md` is the one-page source of truth. Keep edits to it tight — it should stay one page.
 - `PRD.md` and `README.md` are derived from `brief.md`. If you update `brief.md`, check whether `PRD.md` and `README.md` need the same update to stay consistent — don't let them drift.
 - Match the existing tone: plain, concrete, no marketing language, numbers over adjectives.
-
-## Working style
-- This is a two-week build for a MakerSquare capstone. Bias toward the smallest thing that actually works over the more complete version.
-- When in doubt about scope, ask rather than assume — Chris has been explicit and specific about what's in V1 and what's later; don't quietly expand either.
