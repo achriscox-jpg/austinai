@@ -1,0 +1,36 @@
+# Project Brief — Chris Cox
+*MakerSquare · Cohort 2 · Built from pre-work Sections 1–2 & 4*
+
+## The Problem
+Email and the shelter's HMIS database are separate systems that don't interface with each other, so outcomes reported by email can get missed or forgotten before they make it into HMIS — and catching those requires tracking and reconciling everything by hand.
+
+## Who Has It, and How Badly
+**Chris Cox**, at the Adult Emergency Shelter (200+ guests served daily). Email and HMIS "do not speak to each other," so he:
+- Spends **at least 1 hour every day** reading emails for outcome/follow-up keywords
+- Has to **follow up with case managers** to confirm if outcomes were achieved
+- If he falls behind, the shelter **misses grant-reportable outcomes** — real work that happened but was never logged where it counts
+
+His own definition of solved: *"a tool that pulls confirmed and potential future outcomes out of emails so I stop tracking everything myself."*
+
+## V1 — The Smallest Real Version (Two Weeks)
+**An outcome extractor that writes straight into Chris's tracking spreadsheet — replacing the manual copy/note-from-email step.**
+
+1. **Input:** a batch of case-manager emails (like the redacted samples) + `Outcomes.xls`, the file Chris will provide that lists every outcome the shelter tracks
+2. **Extract:** pull outcome mentions from the emails, split into **completed** vs. **in-progress / needs follow-up** — this split already worked in his prompting exercises
+3. **Write:** add new outcomes into the tracking spreadsheet in the right columns — this is the step Chris currently does by hand
+4. **Output:** the updated spreadsheet, plus a short "here's what I added" summary so Chris is reviewing a change log, not retyping from raw emails
+
+**Deliberately left out of V1** (see roadmap): Slack, new-guest tracking, any dashboard. Writing into HMIS itself isn't on the table at all — it's a live case-management system, not something this tool writes to at any stage. Chris's own tracking spreadsheet is his working document, so writing to it directly is the right amount of automation for two weeks. This keeps V1 to one data source (email), one destination (his spreadsheet), and one output (an updated file + change log) — buildable and testable against real redacted data he already has in hand.
+
+## Roadmap — Not Building Now, Building Later
+1. **Slack → tracking spreadsheet** for the Family Shelter (same pattern as V1, different channel)
+2. **New-guest registration tracking** from email, for data-quality checks
+3. **Guest needs & follow-up tracking not yet tracked anywhere** — ID, birth certificate, SS card, evictions, outstanding utility bills
+4. **Case-manager dashboard**: length-of-stay + specific guest needs, to help move guests toward independent living
+5. **Rest of the wishlist**, roughly in order of stated interest: document-acquisition helper (ID/birth cert/SS card), resume & job-application support, benefits-application assistant, service-connection matching (counseling/financial/SA/DV/MH), case-manager contact-cadence tracking, easy outcome-data sharing with supervisors
+
+## How I'll Know V1 Worked
+- Run it against a real batch of case-manager emails + his current tracking spreadsheet
+- Every outcome Chris would've manually copied into the spreadsheet, the tool adds on its own — nothing missed
+- He can point to a batch of emails and never have opened the spreadsheet by hand to log them
+- Soft target: his daily ~1 hour of email-to-spreadsheet copying shrinks because he's reviewing a short "what I added" list instead of retyping from emails
