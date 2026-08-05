@@ -1,6 +1,6 @@
 # Content Spec — Outcomes Review Tool
 
-*Internal working screen for reviewing outcomes the V1 email extractor pulls out, before and after they land in `Outcomes.xls`. See [brief.md](./brief.md) and [PRD.md](./PRD.md) for full project context. This is not a generic admin panel — it's scoped to Chris's actual daily review workflow.*
+*This tool is the destination itself — where the V1 email extractor writes outcomes, and where Chris reviews/manages them. It replaces `Outcomes.xls` as the tracking system; `Outcomes.xls` now only supplies the Classification/Type taxonomy. See [brief.md](./brief.md) and [PRD.md](./PRD.md) for full project context. This is not a generic admin panel — it's scoped to Chris's actual daily review workflow.*
 
 ## Data model
 
@@ -24,7 +24,7 @@ Two tables, same fields:
 1. The extractor pulls an outcome from email and classifies it as completed or in-progress — new records land in the matching table directly.
 2. When a Needs Follow-up record is confirmed done (case manager confirms), it moves to Completed, landing with "documented in HMIS" unchecked.
 3. Chris checks off "documented in HMIS" once he's confirmed it's actually been entered there.
-4. Once checked, the record drops off the list entirely — it doesn't stay around as history. History lives in HMIS/the spreadsheet, not this tool.
+4. Once checked, the record drops off the list entirely — it doesn't stay around as history. History lives in HMIS, not this tool.
 
 This keeps Completed a short, quick-to-clear queue (expected ~5-10 records at a time), separate from Needs Follow-up, which is the one that actually grows and needs ongoing management.
 
