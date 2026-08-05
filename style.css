@@ -52,6 +52,7 @@ body {
 header {
   display: flex;
   align-items: center;
+  justify-content: space-between;
   gap: 20px;
   padding: 12px 24px;
   background: var(--bg);
@@ -115,6 +116,30 @@ main {
   box-shadow: var(--shadow);
   padding: 18px 20px 6px;
   margin-bottom: 28px;
+  animation: card-in 0.35s ease both;
+}
+
+.card:nth-of-type(2) {
+  animation-delay: 0.06s;
+}
+
+@keyframes card-in {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+.card.accent-blue {
+  box-shadow: inset 4px 0 0 0 var(--accent), var(--shadow);
+}
+
+.card.accent-red {
+  box-shadow: inset 4px 0 0 0 var(--brand-red), var(--shadow);
 }
 
 .card-header {
@@ -221,10 +246,17 @@ td.actions {
   white-space: nowrap;
 }
 
+.type-text {
+  color: var(--muted);
+}
+
 /* ---------- Buttons ---------- */
 
 button {
   font: inherit;
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
   padding: 5px 10px;
   margin-right: 4px;
   border: 1px solid var(--border);
@@ -233,6 +265,10 @@ button {
   border-radius: 5px;
   cursor: pointer;
   transition: background 0.12s ease, border-color 0.12s ease, color 0.12s ease;
+}
+
+button svg {
+  flex: none;
 }
 
 button:hover {
@@ -306,9 +342,17 @@ input[type="checkbox"] {
 }
 
 .empty-state {
+  display: flex;
+  align-items: center;
+  gap: 8px;
   color: var(--muted);
   font-style: italic;
-  padding: 10px 0 18px;
+  padding: 12px 0 20px;
+}
+
+.empty-state svg {
+  flex: none;
+  opacity: 0.6;
 }
 
 /* ---------- Add-record form page ---------- */
@@ -335,6 +379,9 @@ form.record-form .form-actions {
 }
 
 form.record-form .form-actions a {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
   color: var(--muted);
   text-decoration: none;
 }

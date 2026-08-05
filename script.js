@@ -228,6 +228,17 @@ function typeOptionsHtml(classification, selected) {
   return html;
 }
 
+// Small inline icons for buttons -- stroke="currentColor" so each one
+// automatically matches its button's text color (blue, red, neutral).
+const ICONS = {
+  check: `<svg width="14" height="14" viewBox="0 0 16 16" aria-hidden="true"><polyline points="3 8.5 6.5 12 13 4" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>`,
+  undo: `<svg width="14" height="14" viewBox="0 0 16 16" aria-hidden="true"><path d="M4 4v3.5h3.5M4.4 6.8a5 5 0 1 1-0.4 3.2" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>`,
+  pencil: `<svg width="14" height="14" viewBox="0 0 16 16" aria-hidden="true"><path d="M11 2.3l2.7 2.7-8 8-3.4 0.9 0.9-3.4z" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/></svg>`,
+  trash: `<svg width="14" height="14" viewBox="0 0 16 16" aria-hidden="true"><path d="M3 4h10M6 4V2.6a.6.6 0 01.6-.6h2.8a.6.6 0 01.6.6V4M4.5 4l.6 9a1 1 0 001 .9h3.8a1 1 0 001-.9l.6-9" fill="none" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"/></svg>`,
+  x: `<svg width="14" height="14" viewBox="0 0 16 16" aria-hidden="true"><path d="M3.5 3.5l9 9M12.5 3.5l-9 9" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>`,
+  plus: `<svg width="14" height="14" viewBox="0 0 16 16" aria-hidden="true"><path d="M8 3v10M3 8h10" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>`,
+};
+
 // ---------- index.html: the two tables ----------
 
 let editingFollowupId = null;
@@ -264,23 +275,23 @@ function renderFollowup() {
         <td><textarea data-field="sourceSnippet">${escapeHtml(r.sourceSnippet)}</textarea></td>
         <td><textarea data-field="notes">${escapeHtml(r.notes)}</textarea></td>
         <td class="actions">
-          <button class="save-btn btn-primary" data-id="${r.id}">Save</button>
-          <button class="cancel-btn" data-id="${r.id}">Cancel</button>
+          <button class="save-btn btn-primary" data-id="${r.id}">${ICONS.check}Save</button>
+          <button class="cancel-btn" data-id="${r.id}">${ICONS.x}Cancel</button>
         </td>`;
     } else {
       tr.innerHTML = `
         <td><span class="id-tag">${escapeHtml(r.guestId)}</span></td>
         <td>${escapeHtml(r.guest)}</td>
         <td><span class="badge">${escapeHtml(r.classification)}</span></td>
-        <td>${escapeHtml(r.type)}</td>
+        <td><span class="type-text">${escapeHtml(r.type)}</span></td>
         <td>${escapeHtml(r.date)}</td>
         <td>${escapeHtml(r.caseManager)}</td>
         <td class="truncate" title="${escapeAttr(r.sourceSnippet)}">${escapeHtml(r.sourceSnippet)}</td>
         <td class="truncate" title="${escapeAttr(r.notes)}">${escapeHtml(r.notes)}</td>
         <td class="actions">
-          <button class="complete-btn" data-id="${r.id}">Move to Completed</button>
-          <button class="edit-btn" data-id="${r.id}">Edit</button>
-          <button class="delete-btn" data-id="${r.id}">Delete</button>
+          <button class="complete-btn" data-id="${r.id}">${ICONS.check}Move to Completed</button>
+          <button class="edit-btn" data-id="${r.id}">${ICONS.pencil}Edit</button>
+          <button class="delete-btn" data-id="${r.id}">${ICONS.trash}Delete</button>
         </td>`;
     }
     tbody.appendChild(tr);
@@ -319,15 +330,15 @@ function renderCompleted() {
         <td><textarea data-field="notes">${escapeHtml(r.notes)}</textarea></td>
         <td class="checkbox-cell">&mdash;</td>
         <td class="actions">
-          <button class="save-btn btn-primary" data-id="${r.id}">Save</button>
-          <button class="cancel-btn" data-id="${r.id}">Cancel</button>
+          <button class="save-btn btn-primary" data-id="${r.id}">${ICONS.check}Save</button>
+          <button class="cancel-btn" data-id="${r.id}">${ICONS.x}Cancel</button>
         </td>`;
     } else {
       tr.innerHTML = `
         <td><span class="id-tag">${escapeHtml(r.guestId)}</span></td>
         <td>${escapeHtml(r.guest)}</td>
         <td><span class="badge">${escapeHtml(r.classification)}</span></td>
-        <td>${escapeHtml(r.type)}</td>
+        <td><span class="type-text">${escapeHtml(r.type)}</span></td>
         <td>${escapeHtml(r.date)}</td>
         <td>${escapeHtml(r.caseManager)}</td>
         <td class="truncate" title="${escapeAttr(r.sourceSnippet)}">${escapeHtml(r.sourceSnippet)}</td>
@@ -336,9 +347,9 @@ function renderCompleted() {
           <input type="checkbox" class="verified-checkbox" data-id="${r.id}">
         </td>
         <td class="actions">
-          <button class="revert-btn" data-id="${r.id}">Move to Follow-up</button>
-          <button class="edit-btn" data-id="${r.id}">Edit</button>
-          <button class="delete-btn" data-id="${r.id}">Delete</button>
+          <button class="revert-btn" data-id="${r.id}">${ICONS.undo}Move to Follow-up</button>
+          <button class="edit-btn" data-id="${r.id}">${ICONS.pencil}Edit</button>
+          <button class="delete-btn" data-id="${r.id}">${ICONS.trash}Delete</button>
         </td>`;
     }
     tbody.appendChild(tr);

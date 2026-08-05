@@ -23,7 +23,7 @@
 </header>
 
 <main>
-  <section class="card" id="completed-section">
+  <section class="card accent-blue" id="completed-section">
     <div class="card-header">
       <h2>Completed</h2>
       <span class="count-badge" id="completed-count">0</span>
@@ -48,10 +48,13 @@
         <tbody></tbody>
       </table>
     </div>
-    <p class="empty-state" id="completed-empty">No completed outcomes yet.</p>
+    <p class="empty-state" id="completed-empty">
+      <svg width="16" height="16" viewBox="0 0 16 16" aria-hidden="true"><polyline points="3 8.5 6.5 12 13 4" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      No completed outcomes yet.
+    </p>
   </section>
 
-  <section class="card" id="followup-section">
+  <section class="card accent-red" id="followup-section">
     <div class="card-header">
       <h2>Needs Follow-up</h2>
       <span class="count-badge" id="followup-count">0</span>
@@ -74,7 +77,10 @@
         <tbody></tbody>
       </table>
     </div>
-    <p class="empty-state" id="followup-empty">No follow-ups yet.</p>
+    <p class="empty-state" id="followup-empty">
+      <svg width="16" height="16" viewBox="0 0 16 16" aria-hidden="true"><path d="M2 5h12M2 8h12M2 11h8" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg>
+      No follow-ups yet.
+    </p>
   </section>
 </main>
 
