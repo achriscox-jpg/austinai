@@ -39,6 +39,7 @@ No separate detail page. Each row shows all fields inline — the source email s
 ## Actions
 
 - Move a record from Needs Follow-up → Completed (once confirmed done)
+- Move a record from Completed → Needs Follow-up (if it turns out it wasn't actually done, or was marked complete in error)
 - Check off "verified in spreadsheet" on a Completed record (record then drops off the list)
 - Manually add a record to either table (for outcomes the extractor missed or Chris learned outside of email)
 - Edit a record's fields (fix something the extractor got wrong before it's trusted or acted on)

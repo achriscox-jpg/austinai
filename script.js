@@ -141,6 +141,7 @@ function renderCompleted() {
           <input type="checkbox" class="verified-checkbox" data-id="${r.id}">
         </td>
         <td class="actions">
+          <button class="revert-btn" data-id="${r.id}">Move to Follow-up</button>
           <button class="edit-btn" data-id="${r.id}">Edit</button>
           <button class="delete-btn" data-id="${r.id}">Delete</button>
         </td>`;
@@ -234,6 +235,20 @@ function wireCompletedTable() {
       const records = loadRecords(STORAGE_KEYS.completed).filter((r) => r.id !== id);
       saveRecords(STORAGE_KEYS.completed, records);
       renderCompleted();
+    } else if (e.target.classList.contains("revert-btn")) {
+      const completed = loadRecords(STORAGE_KEYS.completed);
+      const idx = completed.findIndex((r) => r.id === id);
+      if (idx === -1) return;
+      const [record] = completed.splice(idx, 1);
+      saveRecords(STORAGE_KEYS.completed, completed);
+
+      delete record.verified;
+      const followups = loadRecords(STORAGE_KEYS.followup);
+      followups.push(record);
+      saveRecords(STORAGE_KEYS.followup, followups);
+
+      renderCompleted();
+      renderFollowup();
     }
   });
 
