@@ -253,8 +253,24 @@ tbody tr:nth-child(even) {
 
 td.truncate {
   max-width: 320px;
+  max-height: 4.4em;
+  overflow-y: auto;
   white-space: normal;
   overflow-wrap: break-word;
+  scrollbar-width: thin;
+}
+
+td.truncate::-webkit-scrollbar {
+  width: 6px;
+}
+
+td.truncate::-webkit-scrollbar-thumb {
+  background: var(--border);
+  border-radius: 3px;
+}
+
+td.truncate::-webkit-scrollbar-track {
+  background: transparent;
 }
 
 td.actions {
