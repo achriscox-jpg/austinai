@@ -251,13 +251,13 @@ button.btn-primary:hover {
   border-color: var(--accent-dark);
 }
 
-button.complete-btn {
+button.complete-btn, button.revert-btn {
   border-color: var(--accent);
   color: var(--accent);
   font-weight: 600;
 }
 
-button.complete-btn:hover {
+button.complete-btn:hover, button.revert-btn:hover {
   background: var(--accent-tint);
 }
 
