@@ -690,6 +690,167 @@ function wireAddForm() {
   });
 }
 
+// ---------- reconcile.html: compare against an external report ----------
+
+// Minimal CSV parser -- handles quoted fields, escaped "" quotes, commas
+// inside quotes, and both \n and \r\n line endings. Good enough for a
+// simple exported report; not a full RFC 4180 implementation.
+function parseCsv(text) {
+  if (text.charCodeAt(0) === 0xfeff) text = text.slice(1); // strip BOM
+  const rows = [];
+  let row = [];
+  let field = "";
+  let inQuotes = false;
+
+  for (let i = 0; i < text.length; i++) {
+    const char = text[i];
+    if (inQuotes) {
+      if (char === '"') {
+        if (text[i + 1] === '"') {
+          field += '"';
+          i++;
+        } else {
+          inQuotes = false;
+        }
+      } else {
+        field += char;
+      }
+    } else if (char === '"') {
+      inQuotes = true;
+    } else if (char === ",") {
+      row.push(field);
+      field = "";
+    } else if (char === "\n" || char === "\r") {
+      if (char === "\r" && text[i + 1] === "\n") i++;
+      row.push(field);
+      field = "";
+      if (row.length > 1 || row[0] !== "") rows.push(row);
+      row = [];
+    } else {
+      field += char;
+    }
+  }
+  if (field !== "" || row.length > 0) {
+    row.push(field);
+    rows.push(row);
+  }
+  return rows;
+}
+
+function findColumnIndex(headers, candidates) {
+  const normalized = headers.map((h) => h.trim().toLowerCase().replace(/[^a-z0-9]/g, ""));
+  for (const candidate of candidates) {
+    const idx = normalized.indexOf(candidate);
+    if (idx !== -1) return idx;
+  }
+  return -1;
+}
+
+function reconcileMatchKey(guestId, classification, type) {
+  return [guestId, classification, type].map((v) => String(v ?? "").trim().toLowerCase()).join("|");
+}
+
+function wireReconcileForm() {
+  const form = document.getElementById("reconcile-form");
+  if (!form) return;
+
+  const fileInput = document.getElementById("reconcile-file");
+  const messageEl = document.getElementById("reconcile-message");
+  const resultsSection = document.getElementById("reconcile-results-section");
+  const resultsTbody = document.querySelector("#reconcile-table tbody");
+  const countEl = document.getElementById("reconcile-count");
+
+  form.addEventListener("submit", (e) => {
+    e.preventDefault();
+    messageEl.textContent = "";
+    resultsSection.style.display = "none";
+
+    const file = fileInput.files[0];
+    if (!file) {
+      messageEl.textContent = "Choose a file first.";
+      return;
+    }
+
+    const lowerName = file.name.toLowerCase();
+    if (lowerName.endsWith(".xls") || lowerName.endsWith(".xlsx")) {
+      messageEl.textContent =
+        "That looks like an Excel file. Please open it and use “Save As” → CSV, then upload the .csv file instead.";
+      return;
+    }
+
+    const reader = new FileReader();
+    reader.onload = () => {
+      runReconcileComparison(String(reader.result), messageEl, resultsSection, resultsTbody, countEl);
+      fileInput.value = ""; // don't hold onto the file selection once processed
+    };
+    reader.onerror = () => {
+      messageEl.textContent = "Couldn't read that file. Please try again.";
+    };
+    reader.readAsText(file);
+  });
+}
+
+function runReconcileComparison(csvText, messageEl, resultsSection, resultsTbody, countEl) {
+  const rows = parseCsv(csvText).filter((r) => r.some((cell) => cell.trim() !== ""));
+  if (rows.length < 2) {
+    messageEl.textContent = "That file doesn't have any data rows to compare.";
+    return;
+  }
+
+  const headers = rows[0];
+  const guestIdIdx = findColumnIndex(headers, ["guestid", "id"]);
+  const classificationIdx = findColumnIndex(headers, ["classification"]);
+  const typeIdx = findColumnIndex(headers, ["type"]);
+
+  if (guestIdIdx === -1 || classificationIdx === -1 || typeIdx === -1) {
+    messageEl.textContent =
+      "Couldn't find Guest ID / Classification / Type columns — check the header row matches those names.";
+    return;
+  }
+
+  const reportKeys = new Set();
+  for (let i = 1; i < rows.length; i++) {
+    const r = rows[i];
+    reportKeys.add(reconcileMatchKey(r[guestIdIdx], r[classificationIdx], r[typeIdx]));
+  }
+
+  const matches = [];
+  loadRecords(STORAGE_KEYS.followup).forEach((r) => {
+    if (reportKeys.has(reconcileMatchKey(r.guestId, r.classification, r.type))) {
+      matches.push({ ...r, sourceTable: "Needs Follow-up" });
+    }
+  });
+  loadRecords(STORAGE_KEYS.completed).forEach((r) => {
+    if (reportKeys.has(reconcileMatchKey(r.guestId, r.classification, r.type))) {
+      matches.push({ ...r, sourceTable: "Completed" });
+    }
+  });
+
+  resultsTbody.innerHTML = "";
+  countEl.textContent = matches.length;
+  resultsSection.style.display = "block";
+
+  if (matches.length === 0) {
+    messageEl.textContent = "Compared against " + (rows.length - 1) + " report row(s) — no possible matches found.";
+    return;
+  }
+
+  messageEl.textContent =
+    "Compared against " + (rows.length - 1) + " report row(s) — review these on the main Outcomes page.";
+
+  matches.forEach((r) => {
+    const tr = document.createElement("tr");
+    tr.innerHTML = `
+      <td><span class="badge">${escapeHtml(r.sourceTable)}</span></td>
+      <td><span class="id-tag">${escapeHtml(r.guestId)}</span></td>
+      <td>${escapeHtml(r.guest)}</td>
+      <td><span class="badge">${escapeHtml(r.classification)}</span></td>
+      <td><span class="type-text">${escapeHtml(r.type)}</span></td>
+      <td>${escapeHtml(r.date)}</td>`;
+    resultsTbody.appendChild(tr);
+  });
+}
+
 // ---------- init ----------
 
 document.addEventListener("DOMContentLoaded", () => {
@@ -705,4 +866,5 @@ document.addEventListener("DOMContentLoaded", () => {
   renderCompleted();
   wireAddForm();
   wireDragAndDrop();
+  wireReconcileForm();
 });

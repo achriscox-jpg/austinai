@@ -45,8 +45,21 @@ No separate detail page. Each row shows all fields inline — the source email s
 - Edit a record's fields (fix something the extractor got wrong before it's trusted or acted on)
 - Delete/dismiss a record (extracted in error, shouldn't be tracked) — deletes immediately with a brief "Undo" toast rather than a confirm dialog
 
+## Reconciliation (heads-up, not automatic)
+
+A separate page (`reconcile.html`) lets Chris upload a manually-run, PII-redacted CSV report of
+already-logged outcomes (e.g. from HMIS) and check it against both tables. This is explicitly *not*
+an automatic dedup — it flags possible matches (same Guest ID + Classification + Type) for Chris to
+review by hand; nothing is moved, checked off, or deleted automatically.
+
+- Matches against **both** Needs Follow-up and Completed
+- Only CSV is supported — an `.xls`/`.xlsx` upload is rejected with a message to re-export as CSV first
+- Expected columns: Guest ID, Classification, Type (header names matched loosely)
+- The uploaded file is never saved — it's parsed in the browser for one comparison pass and discarded
+
 ## Explicitly not included (for now)
 
 - No filter/search on the Needs Follow-up list
 - No board view
 - No detail page / drill-in per record
+- No automatic deduplication — reconciliation is a manual, human-reviewed heads-up only
