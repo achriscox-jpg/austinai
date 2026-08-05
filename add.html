@@ -1,0 +1,75 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Add Outcome — Outcomes Review Tool</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<header>
+  <h1>Outcomes Review Tool</h1>
+  <nav>
+    <a href="index.html">Outcomes</a>
+    <a href="add.html" class="active">Add Outcome</a>
+  </nav>
+</header>
+
+<main>
+  <section>
+    <h2>Add Outcome</h2>
+    <form id="add-form" class="record-form">
+      <label>
+        Table
+        <select name="table">
+          <option value="followup">Needs Follow-up</option>
+          <option value="completed">Completed</option>
+        </select>
+      </label>
+
+      <label>
+        ID
+        <input type="text" name="guestId">
+      </label>
+
+      <label>
+        Guest
+        <input type="text" name="guest" required>
+      </label>
+
+      <label>
+        Outcome type
+        <input type="text" name="outcomeType" required>
+      </label>
+
+      <label>
+        Date
+        <input type="date" name="date" required>
+      </label>
+
+      <label>
+        Case manager
+        <input type="text" name="caseManager">
+      </label>
+
+      <label>
+        Source email reference/snippet
+        <textarea name="sourceSnippet"></textarea>
+      </label>
+
+      <label>
+        Notes <span class="hint">(follow-up detail, or any other context)</span>
+        <textarea name="notes"></textarea>
+      </label>
+
+      <div class="form-actions">
+        <button type="submit">Add Outcome</button>
+        <a href="index.html">Cancel</a>
+      </div>
+    </form>
+  </section>
+</main>
+
+<script src="script.js"></script>
+</body>
+</html>
