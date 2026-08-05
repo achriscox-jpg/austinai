@@ -17,14 +17,14 @@ Two tables, same fields:
 - Follow-up detail / notes
 
 **Completed** — same fields, plus:
-- Verified in spreadsheet (checkbox)
+- Documented in HMIS (checkbox)
 
 ## Lifecycle
 
 1. The extractor pulls an outcome from email and classifies it as completed or in-progress — new records land in the matching table directly.
-2. When a Needs Follow-up record is confirmed done (case manager confirms), it moves to Completed, landing with "verified in spreadsheet" unchecked.
-3. Chris checks off "verified in spreadsheet" once he's confirmed it's actually in `Outcomes.xls`.
-4. Once checked, the record drops off the list entirely — it doesn't stay around as history. History lives in the spreadsheet, not this tool.
+2. When a Needs Follow-up record is confirmed done (case manager confirms), it moves to Completed, landing with "documented in HMIS" unchecked.
+3. Chris checks off "documented in HMIS" once he's confirmed it's actually been entered there.
+4. Once checked, the record drops off the list entirely — it doesn't stay around as history. History lives in HMIS/the spreadsheet, not this tool.
 
 This keeps Completed a short, quick-to-clear queue (expected ~5-10 records at a time), separate from Needs Follow-up, which is the one that actually grows and needs ongoing management.
 
@@ -40,7 +40,7 @@ No separate detail page. Each row shows all fields inline — the source email s
 
 - Move a record from Needs Follow-up → Completed (once confirmed done)
 - Move a record from Completed → Needs Follow-up (if it turns out it wasn't actually done, or was marked complete in error)
-- Check off "verified in spreadsheet" on a Completed record (record then drops off the list)
+- Check off "documented in HMIS" on a Completed record (record then drops off the list)
 - Manually add a record to either table (for outcomes the extractor missed or Chris learned outside of email)
 - Edit a record's fields (fix something the extractor got wrong before it's trusted or acted on)
 - Delete/dismiss a record (extracted in error, shouldn't be tracked)

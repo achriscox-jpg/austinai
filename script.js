@@ -83,7 +83,7 @@ function renderFollowup() {
         <td class="truncate" title="${escapeAttr(r.sourceSnippet)}">${escapeHtml(r.sourceSnippet)}</td>
         <td class="truncate" title="${escapeAttr(r.notes)}">${escapeHtml(r.notes)}</td>
         <td class="actions">
-          <button class="complete-btn" data-id="${r.id}">Mark Complete</button>
+          <button class="complete-btn" data-id="${r.id}">Move to Completed</button>
           <button class="edit-btn" data-id="${r.id}">Edit</button>
           <button class="delete-btn" data-id="${r.id}">Delete</button>
         </td>`;
@@ -256,7 +256,7 @@ function wireCompletedTable() {
     if (!e.target.classList.contains("verified-checkbox")) return;
     const id = e.target.dataset.id;
     if (!e.target.checked) return;
-    if (!confirm("Mark as verified in the spreadsheet and remove it from this list?")) {
+    if (!confirm("Mark as documented in HMIS and remove it from this list?")) {
       e.target.checked = false;
       return;
     }
