@@ -228,12 +228,12 @@ function typeOptionsHtml(classification, selected) {
   return html;
 }
 
-// Leftmost column in both tables -- shows a dismissible warning badge
-// when a reconciliation upload has flagged this record as a possible
-// match (see runReconcileComparison).
+// Leftmost column in both tables -- shows a dismissible "worth a look"
+// badge when a reconciliation upload has flagged this record as a
+// possible match (see runReconcileComparison).
 function flagCellHtml(r) {
   if (!r.possibleMatch) return `<td class="flag-cell"></td>`;
-  return `<td class="flag-cell"><button class="flag-btn" data-id="${r.id}" title="Possible match found in a reconciliation report — click to dismiss">&#9888;</button></td>`;
+  return `<td class="flag-cell"><button class="flag-btn" data-id="${r.id}" title="Possible match found in a reconciliation report — click to dismiss">${ICONS.magnifier}</button></td>`;
 }
 
 // Small inline icons for buttons -- stroke="currentColor" so each one
@@ -245,6 +245,7 @@ const ICONS = {
   trash: `<svg width="14" height="14" viewBox="0 0 16 16" aria-hidden="true"><path d="M3 4h10M6 4V2.6a.6.6 0 01.6-.6h2.8a.6.6 0 01.6.6V4M4.5 4l.6 9a1 1 0 001 .9h3.8a1 1 0 001-.9l.6-9" fill="none" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"/></svg>`,
   x: `<svg width="14" height="14" viewBox="0 0 16 16" aria-hidden="true"><path d="M3.5 3.5l9 9M12.5 3.5l-9 9" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>`,
   plus: `<svg width="14" height="14" viewBox="0 0 16 16" aria-hidden="true"><path d="M8 3v10M3 8h10" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>`,
+  magnifier: `<svg width="14" height="14" viewBox="0 0 16 16" aria-hidden="true"><circle cx="6.5" cy="6.5" r="4" fill="none" stroke="currentColor" stroke-width="1.6"/><line x1="9.5" y1="9.5" x2="13.5" y2="13.5" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg>`,
 };
 
 // ---------- index.html: the two tables ----------

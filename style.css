@@ -14,8 +14,8 @@
   --zebra: rgba(0, 0, 0, 0.02);
   --row-hover-blue: #d2e6f2;  /* distinct from --accent-tint, used for zebra */
   --row-hover-red: #f8d7d1;   /* distinct from --danger-bg, used for zebra */
-  --warn: #8a6400;            /* possible-match flag from reconciliation -- distinct from blue/red identity */
-  --warn-bg: #fff6dd;
+  --review: #0f6a63;          /* possible-match flag from reconciliation -- calm teal, not a warning color */
+  --review-bg: #e3f4f2;
   --shadow: 0 1px 2px rgba(20, 20, 20, 0.05), 0 1px 8px rgba(20, 20, 20, 0.04);
 }
 
@@ -36,8 +36,8 @@
     --zebra: rgba(255, 255, 255, 0.025);
     --row-hover-blue: #2b4c63;
     --row-hover-red: #542e29;
-    --warn: #e8c15a;
-    --warn-bg: #3a2f12;
+    --review: #5cc9bd;
+    --review-bg: #163330;
     --shadow: 0 1px 2px rgba(0, 0, 0, 0.3), 0 1px 10px rgba(0, 0, 0, 0.25);
   }
 }
@@ -404,16 +404,15 @@ button.delete-btn:hover {
 }
 
 button.flag-btn {
-  padding: 2px 7px;
+  padding: 3px 7px;
   margin-right: 0;
-  background: var(--warn-bg);
-  border-color: var(--warn);
-  color: var(--warn);
-  font-weight: 700;
+  background: var(--review-bg);
+  border-color: var(--review);
+  color: var(--review);
 }
 
 button.flag-btn:hover {
-  background: var(--warn);
+  background: var(--review);
   color: #fff;
 }
 
