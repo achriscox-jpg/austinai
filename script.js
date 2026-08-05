@@ -286,8 +286,8 @@ function renderFollowup() {
         <td><span class="type-text">${escapeHtml(r.type)}</span></td>
         <td>${escapeHtml(r.date)}</td>
         <td>${escapeHtml(r.caseManager)}</td>
-        <td class="truncate" title="${escapeAttr(r.sourceSnippet)}">${escapeHtml(r.sourceSnippet)}</td>
-        <td class="truncate" title="${escapeAttr(r.notes)}">${escapeHtml(r.notes)}</td>
+        <td class="truncate"><div class="cell-scroll" title="${escapeAttr(r.sourceSnippet)}">${escapeHtml(r.sourceSnippet)}</div></td>
+        <td class="truncate"><div class="cell-scroll" title="${escapeAttr(r.notes)}">${escapeHtml(r.notes)}</div></td>
         <td class="actions">
           <button class="complete-btn" data-id="${r.id}">${ICONS.check}Move to Completed</button>
           <button class="edit-btn" data-id="${r.id}">${ICONS.pencil}Edit</button>
@@ -343,8 +343,8 @@ function renderCompleted() {
         <td><span class="type-text">${escapeHtml(r.type)}</span></td>
         <td>${escapeHtml(r.date)}</td>
         <td>${escapeHtml(r.caseManager)}</td>
-        <td class="truncate" title="${escapeAttr(r.sourceSnippet)}">${escapeHtml(r.sourceSnippet)}</td>
-        <td class="truncate" title="${escapeAttr(r.notes)}">${escapeHtml(r.notes)}</td>
+        <td class="truncate"><div class="cell-scroll" title="${escapeAttr(r.sourceSnippet)}">${escapeHtml(r.sourceSnippet)}</div></td>
+        <td class="truncate"><div class="cell-scroll" title="${escapeAttr(r.notes)}">${escapeHtml(r.notes)}</div></td>
         <td class="checkbox-cell">
           <input type="checkbox" class="verified-checkbox" data-id="${r.id}">
         </td>

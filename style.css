@@ -253,8 +253,27 @@ tbody tr:nth-child(even) {
 
 td.truncate {
   max-width: 320px;
+}
+
+.cell-scroll {
+  max-height: 4.35em; /* ~3 lines at this table's line-height */
+  overflow-y: auto;
   white-space: normal;
   overflow-wrap: break-word;
+  scrollbar-width: thin;
+}
+
+.cell-scroll::-webkit-scrollbar {
+  width: 6px;
+}
+
+.cell-scroll::-webkit-scrollbar-thumb {
+  background: var(--border);
+  border-radius: 3px;
+}
+
+.cell-scroll::-webkit-scrollbar-track {
+  background: transparent;
 }
 
 td.actions {
