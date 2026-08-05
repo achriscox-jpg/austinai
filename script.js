@@ -400,6 +400,70 @@ function moveToFollowup(id) {
   renderFollowup();
 }
 
+// ---------- delete with undo ----------
+
+let pendingDelete = null; // { table, record, index, timeoutId }
+const UNDO_WINDOW_MS = 7000;
+
+function getToastEl() {
+  let toast = document.getElementById("toast");
+  if (!toast) {
+    toast = document.createElement("div");
+    toast.id = "toast";
+    toast.className = "toast";
+    document.body.appendChild(toast);
+  }
+  return toast;
+}
+
+function hideToast() {
+  const toast = document.getElementById("toast");
+  if (toast) toast.classList.remove("visible");
+}
+
+function showUndoToast(message, onUndo) {
+  const toast = getToastEl();
+  toast.innerHTML = `<span></span><button class="undo-btn" type="button">Undo</button>`;
+  toast.querySelector("span").textContent = message;
+  toast.classList.add("visible");
+  toast.querySelector(".undo-btn").onclick = () => {
+    toast.classList.remove("visible");
+    onUndo();
+  };
+}
+
+function deleteWithUndo(table, id) {
+  const key = table === "completed" ? STORAGE_KEYS.completed : STORAGE_KEYS.followup;
+  const records = loadRecords(key);
+  const index = records.findIndex((r) => r.id === id);
+  if (index === -1) return;
+  const [record] = records.splice(index, 1);
+  saveRecords(key, records);
+  if (table === "completed") renderCompleted();
+  else renderFollowup();
+
+  if (pendingDelete) clearTimeout(pendingDelete.timeoutId);
+
+  const timeoutId = setTimeout(() => {
+    pendingDelete = null;
+    hideToast();
+  }, UNDO_WINDOW_MS);
+
+  pendingDelete = { table, record, index, timeoutId };
+
+  showUndoToast(`Deleted ${record.guest || "record"}`, () => {
+    clearTimeout(pendingDelete.timeoutId);
+    const restoreKey = pendingDelete.table === "completed" ? STORAGE_KEYS.completed : STORAGE_KEYS.followup;
+    const restoreRecords = loadRecords(restoreKey);
+    const insertAt = Math.min(pendingDelete.index, restoreRecords.length);
+    restoreRecords.splice(insertAt, 0, pendingDelete.record);
+    saveRecords(restoreKey, restoreRecords);
+    if (pendingDelete.table === "completed") renderCompleted();
+    else renderFollowup();
+    pendingDelete = null;
+  });
+}
+
 function wireFollowupTable() {
   const tableEl = document.getElementById("followup-table");
   if (!tableEl) return;
@@ -427,10 +491,7 @@ function wireFollowupTable() {
       editingFollowupId = null;
       renderFollowup();
     } else if (btn.classList.contains("delete-btn")) {
-      if (!confirm("Delete this follow-up record? This can't be undone.")) return;
-      const records = loadRecords(STORAGE_KEYS.followup).filter((r) => r.id !== id);
-      saveRecords(STORAGE_KEYS.followup, records);
-      renderFollowup();
+      deleteWithUndo("followup", id);
     } else if (btn.classList.contains("complete-btn")) {
       moveToCompleted(id);
     }
@@ -470,10 +531,7 @@ function wireCompletedTable() {
       editingCompletedId = null;
       renderCompleted();
     } else if (btn.classList.contains("delete-btn")) {
-      if (!confirm("Delete this completed record? This can't be undone.")) return;
-      const records = loadRecords(STORAGE_KEYS.completed).filter((r) => r.id !== id);
-      saveRecords(STORAGE_KEYS.completed, records);
-      renderCompleted();
+      deleteWithUndo("completed", id);
     } else if (btn.classList.contains("revert-btn")) {
       moveToFollowup(id);
     }

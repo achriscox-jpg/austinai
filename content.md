@@ -43,7 +43,7 @@ No separate detail page. Each row shows all fields inline — the source email s
 - Check off "documented in HMIS" on a Completed record (record then drops off the list)
 - Manually add a record to either table (for outcomes the extractor missed or Chris learned outside of email)
 - Edit a record's fields (fix something the extractor got wrong before it's trusted or acted on)
-- Delete/dismiss a record (extracted in error, shouldn't be tracked)
+- Delete/dismiss a record (extracted in error, shouldn't be tracked) — deletes immediately with a brief "Undo" toast rather than a confirm dialog
 
 ## Explicitly not included (for now)
 
