@@ -4,9 +4,11 @@
   --bg-alt: #f6f6f6;
   --text: #1a1a1a;
   --muted: #666666;
-  --accent: #2c5f8a;
-  --danger: #a33;
-  --danger-bg: #fdeeee;
+  --accent: #1c6ea4;       /* blue, from the logo's "H" */
+  --accent-dark: #155783;  /* hover/darker shade of accent */
+  --brand-red: #dc3c2d;    /* red, from the logo's roof */
+  --danger: #b23321;       /* close to brand red, still reads as destructive */
+  --danger-bg: #fdecea;
 }
 
 * {
@@ -24,6 +26,7 @@ body {
 
 header {
   border-bottom: 1px solid var(--border);
+  border-top: 4px solid var(--brand-red);
   padding: 12px 24px;
   display: flex;
   align-items: baseline;
@@ -35,6 +38,7 @@ header h1 {
   font-size: 18px;
   margin: 0;
   white-space: nowrap;
+  color: var(--accent);
 }
 
 nav {
@@ -55,6 +59,7 @@ nav a:hover {
 
 nav a.active {
   border-bottom: 2px solid var(--accent);
+  color: var(--accent);
   font-weight: 600;
 }
 
