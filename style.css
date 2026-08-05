@@ -251,6 +251,16 @@ tbody tr:nth-child(even) {
   background: var(--row-hover-red);
 }
 
+/* On the plain white (non-zebra) rows, echo the card's accent stripe --
+   the tinted rows already carry color via their background. */
+#completed-table tbody tr:nth-child(odd) td:first-child {
+  border-left: 3px solid var(--accent);
+}
+
+#followup-table tbody tr:nth-child(odd) td:first-child {
+  border-left: 3px solid var(--brand-red);
+}
+
 td.truncate {
   max-width: 320px;
 }
