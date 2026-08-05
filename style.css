@@ -246,6 +246,14 @@ td.truncate {
 
 td.actions {
   white-space: nowrap;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 6px;
+}
+
+td.actions button {
+  margin-right: 0;
 }
 
 .id-tag {
