@@ -146,6 +146,19 @@ main {
   box-shadow: inset 4px 0 0 0 var(--brand-red), var(--shadow);
 }
 
+.card.drop-target {
+  outline: 2px dashed var(--accent);
+  outline-offset: 2px;
+}
+
+tbody tr[draggable="true"] {
+  cursor: grab;
+}
+
+tbody tr.dragging {
+  opacity: 0.4;
+}
+
 .card-header {
   display: flex;
   align-items: center;

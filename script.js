@@ -293,6 +293,8 @@ function renderFollowup() {
           <button class="edit-btn" data-id="${r.id}">${ICONS.pencil}Edit</button>
           <button class="delete-btn" data-id="${r.id}">${ICONS.trash}Delete</button>
         </td>`;
+      tr.draggable = true;
+      tr.dataset.dragId = r.id;
     }
     tbody.appendChild(tr);
   });
@@ -351,6 +353,8 @@ function renderCompleted() {
           <button class="edit-btn" data-id="${r.id}">${ICONS.pencil}Edit</button>
           <button class="delete-btn" data-id="${r.id}">${ICONS.trash}Delete</button>
         </td>`;
+      tr.draggable = true;
+      tr.dataset.dragId = r.id;
     }
     tbody.appendChild(tr);
   });
@@ -364,49 +368,71 @@ function readRowInputs(tr) {
   return fields;
 }
 
+// Shared move logic -- used by both the row buttons and drag-and-drop.
+function moveToCompleted(id) {
+  const followups = loadRecords(STORAGE_KEYS.followup);
+  const idx = followups.findIndex((r) => r.id === id);
+  if (idx === -1) return;
+  const [record] = followups.splice(idx, 1);
+  saveRecords(STORAGE_KEYS.followup, followups);
+
+  const completed = loadRecords(STORAGE_KEYS.completed);
+  completed.push({ ...record, verified: false });
+  saveRecords(STORAGE_KEYS.completed, completed);
+
+  renderFollowup();
+  renderCompleted();
+}
+
+function moveToFollowup(id) {
+  const completed = loadRecords(STORAGE_KEYS.completed);
+  const idx = completed.findIndex((r) => r.id === id);
+  if (idx === -1) return;
+  const [record] = completed.splice(idx, 1);
+  saveRecords(STORAGE_KEYS.completed, completed);
+
+  delete record.verified;
+  const followups = loadRecords(STORAGE_KEYS.followup);
+  followups.push(record);
+  saveRecords(STORAGE_KEYS.followup, followups);
+
+  renderCompleted();
+  renderFollowup();
+}
+
 function wireFollowupTable() {
   const tableEl = document.getElementById("followup-table");
   if (!tableEl) return;
   const tbody = tableEl.querySelector("tbody");
 
   tbody.addEventListener("click", (e) => {
-    const id = e.target.dataset.id;
+    const btn = e.target.closest("button");
+    const id = btn && btn.dataset.id;
     if (!id) return;
 
-    if (e.target.classList.contains("edit-btn")) {
+    if (btn.classList.contains("edit-btn")) {
       editingFollowupId = id;
       renderFollowup();
-    } else if (e.target.classList.contains("cancel-btn")) {
+    } else if (btn.classList.contains("cancel-btn")) {
       editingFollowupId = null;
       renderFollowup();
-    } else if (e.target.classList.contains("save-btn")) {
+    } else if (btn.classList.contains("save-btn")) {
       const records = loadRecords(STORAGE_KEYS.followup);
       const idx = records.findIndex((r) => r.id === id);
       if (idx !== -1) {
-        const fields = readRowInputs(e.target.closest("tr"));
+        const fields = readRowInputs(btn.closest("tr"));
         records[idx] = { ...records[idx], ...fields };
         saveRecords(STORAGE_KEYS.followup, records);
       }
       editingFollowupId = null;
       renderFollowup();
-    } else if (e.target.classList.contains("delete-btn")) {
+    } else if (btn.classList.contains("delete-btn")) {
       if (!confirm("Delete this follow-up record? This can't be undone.")) return;
       const records = loadRecords(STORAGE_KEYS.followup).filter((r) => r.id !== id);
       saveRecords(STORAGE_KEYS.followup, records);
       renderFollowup();
-    } else if (e.target.classList.contains("complete-btn")) {
-      const followups = loadRecords(STORAGE_KEYS.followup);
-      const idx = followups.findIndex((r) => r.id === id);
-      if (idx === -1) return;
-      const [record] = followups.splice(idx, 1);
-      saveRecords(STORAGE_KEYS.followup, followups);
-
-      const completed = loadRecords(STORAGE_KEYS.completed);
-      completed.push({ ...record, verified: false });
-      saveRecords(STORAGE_KEYS.completed, completed);
-
-      renderFollowup();
-      renderCompleted();
+    } else if (btn.classList.contains("complete-btn")) {
+      moveToCompleted(id);
     }
   });
 
@@ -423,44 +449,33 @@ function wireCompletedTable() {
   const tbody = tableEl.querySelector("tbody");
 
   tbody.addEventListener("click", (e) => {
-    const id = e.target.dataset.id;
+    const btn = e.target.closest("button");
+    const id = btn && btn.dataset.id;
     if (!id) return;
 
-    if (e.target.classList.contains("edit-btn")) {
+    if (btn.classList.contains("edit-btn")) {
       editingCompletedId = id;
       renderCompleted();
-    } else if (e.target.classList.contains("cancel-btn")) {
+    } else if (btn.classList.contains("cancel-btn")) {
       editingCompletedId = null;
       renderCompleted();
-    } else if (e.target.classList.contains("save-btn")) {
+    } else if (btn.classList.contains("save-btn")) {
       const records = loadRecords(STORAGE_KEYS.completed);
       const idx = records.findIndex((r) => r.id === id);
       if (idx !== -1) {
-        const fields = readRowInputs(e.target.closest("tr"));
+        const fields = readRowInputs(btn.closest("tr"));
         records[idx] = { ...records[idx], ...fields };
         saveRecords(STORAGE_KEYS.completed, records);
       }
       editingCompletedId = null;
       renderCompleted();
-    } else if (e.target.classList.contains("delete-btn")) {
+    } else if (btn.classList.contains("delete-btn")) {
       if (!confirm("Delete this completed record? This can't be undone.")) return;
       const records = loadRecords(STORAGE_KEYS.completed).filter((r) => r.id !== id);
       saveRecords(STORAGE_KEYS.completed, records);
       renderCompleted();
-    } else if (e.target.classList.contains("revert-btn")) {
-      const completed = loadRecords(STORAGE_KEYS.completed);
-      const idx = completed.findIndex((r) => r.id === id);
-      if (idx === -1) return;
-      const [record] = completed.splice(idx, 1);
-      saveRecords(STORAGE_KEYS.completed, completed);
-
-      delete record.verified;
-      const followups = loadRecords(STORAGE_KEYS.followup);
-      followups.push(record);
-      saveRecords(STORAGE_KEYS.followup, followups);
-
-      renderCompleted();
-      renderFollowup();
+    } else if (btn.classList.contains("revert-btn")) {
+      moveToFollowup(id);
     }
   });
 
@@ -482,6 +497,60 @@ function wireCompletedTable() {
     saveRecords(STORAGE_KEYS.completed, records);
     renderCompleted();
   });
+}
+
+// ---------- drag and drop between the two tables ----------
+
+function wireDragAndDrop() {
+  const followupTbody = document.querySelector("#followup-table tbody");
+  const completedTbody = document.querySelector("#completed-table tbody");
+  const followupSection = document.getElementById("followup-section");
+  const completedSection = document.getElementById("completed-section");
+  if (!followupTbody || !completedTbody || !followupSection || !completedSection) return;
+
+  function handleDragStart(source) {
+    return (e) => {
+      const tr = e.target.closest("tr[draggable='true']");
+      if (!tr) return;
+      e.dataTransfer.setData("text/plain", JSON.stringify({ id: tr.dataset.dragId, source }));
+      e.dataTransfer.effectAllowed = "move";
+      tr.classList.add("dragging");
+    };
+  }
+
+  followupTbody.addEventListener("dragstart", handleDragStart("followup"));
+  completedTbody.addEventListener("dragstart", handleDragStart("completed"));
+
+  document.addEventListener("dragend", (e) => {
+    const tr = e.target.closest && e.target.closest("tr");
+    if (tr) tr.classList.remove("dragging");
+  });
+
+  function setupDropZone(sectionEl, expectedSource, onDrop) {
+    sectionEl.addEventListener("dragover", (e) => {
+      e.preventDefault();
+      e.dataTransfer.dropEffect = "move";
+      sectionEl.classList.add("drop-target");
+    });
+    sectionEl.addEventListener("dragleave", (e) => {
+      if (!sectionEl.contains(e.relatedTarget)) sectionEl.classList.remove("drop-target");
+    });
+    sectionEl.addEventListener("drop", (e) => {
+      e.preventDefault();
+      sectionEl.classList.remove("drop-target");
+      let data;
+      try {
+        data = JSON.parse(e.dataTransfer.getData("text/plain"));
+      } catch (err) {
+        return;
+      }
+      if (!data || data.source !== expectedSource) return;
+      onDrop(data.id);
+    });
+  }
+
+  setupDropZone(completedSection, "followup", moveToCompleted);
+  setupDropZone(followupSection, "completed", moveToFollowup);
 }
 
 // ---------- add.html: the add-record form ----------
@@ -544,4 +613,5 @@ document.addEventListener("DOMContentLoaded", () => {
   renderFollowup();
   renderCompleted();
   wireAddForm();
+  wireDragAndDrop();
 });
