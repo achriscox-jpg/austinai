@@ -13,24 +13,24 @@ Email and the shelter's HMIS database are separate systems that don't interface 
 His own definition of solved: *"a tool that pulls confirmed and potential future outcomes out of emails so I stop tracking everything myself."*
 
 ## V1 — The Smallest Real Version (Two Weeks)
-**An outcome extractor that writes straight into Chris's tracking spreadsheet — replacing the manual copy/note-from-email step.**
+**An outcome extractor that writes straight into Chris's outcomes tracking tool — replacing the manual copy/note-from-email-into-a-spreadsheet step.**
 
-1. **Input:** a batch of case-manager emails (like the redacted samples) + `Outcomes.xls`, the file Chris will provide that lists every outcome the shelter tracks
+1. **Input:** a batch of case-manager emails (like the redacted samples) + `Outcomes.xls`, the file Chris provided that lists every outcome the shelter tracks — used to categorize each extracted outcome by Classification/Type
 2. **Extract:** pull outcome mentions from the emails, split into **completed** vs. **in-progress / needs follow-up** — this split already worked in his prompting exercises
-3. **Write:** add new outcomes into the tracking spreadsheet in the right columns — this is the step Chris currently does by hand
-4. **Output:** the updated spreadsheet, plus a short "here's what I added" summary so Chris is reviewing a change log, not retyping from raw emails
+3. **Write:** add each new outcome into the tracking tool, filed under the right Classification/Type — this replaces the manual copy-into-spreadsheet step Chris currently does by hand
+4. **Output:** the updated tracking tool, plus a short "here's what I added" summary so Chris is reviewing a change log, not retyping from raw emails
 
-**Deliberately left out of V1** (see roadmap): Slack, new-guest tracking, any dashboard. Writing into HMIS itself isn't on the table at all — it's a live case-management system, not something this tool writes to at any stage. Chris's own tracking spreadsheet is his working document, so writing to it directly is the right amount of automation for two weeks. This keeps V1 to one data source (email), one destination (his spreadsheet), and one output (an updated file + change log) — buildable and testable against real redacted data he already has in hand.
+**Deliberately left out of V1** (see roadmap): Slack, new-guest tracking, and the broader case-manager dashboard (roadmap item 4 — length-of-stay + guest needs; a different, later thing from this V1 tracking tool). Writing into HMIS itself isn't on the table at all — it's a live case-management system, not something this tool writes to at any stage. Chris's own tracking tool is his working system now (no more `Outcomes.xls` as the destination — it fully replaces it), so writing to it directly is the right amount of automation for two weeks. This keeps V1 to one data source (email), one destination (his tracking tool), and one output (an updated record + change log) — buildable and testable against real redacted data he already has in hand.
 
 ## Roadmap — Not Building Now, Building Later
-1. **Slack → tracking spreadsheet** for the Family Shelter (same pattern as V1, different channel)
+1. **Slack → tracking tool** for the Family Shelter (same pattern as V1, different channel)
 2. **New-guest registration tracking** from email, for data-quality checks
 3. **Guest needs & follow-up tracking not yet tracked anywhere** — ID, birth certificate, SS card, evictions, outstanding utility bills
-4. **Case-manager dashboard**: length-of-stay + specific guest needs, to help move guests toward independent living
+4. **Broader case-manager dashboard**: length-of-stay + specific guest needs, to help move guests toward independent living (distinct from the V1 outcomes tracking tool)
 5. **Rest of the wishlist**, roughly in order of stated interest: document-acquisition helper (ID/birth cert/SS card), resume & job-application support, benefits-application assistant, service-connection matching (counseling/financial/SA/DV/MH), case-manager contact-cadence tracking, easy outcome-data sharing with supervisors
 
 ## How I'll Know V1 Worked
-- Run it against a real batch of case-manager emails + his current tracking spreadsheet
-- Every outcome Chris would've manually copied into the spreadsheet, the tool adds on its own — nothing missed
-- He can point to a batch of emails and never have opened the spreadsheet by hand to log them
+- Run it against a real batch of case-manager emails + his current tracking tool
+- Every outcome Chris would've manually copied into a spreadsheet, the tool adds on its own — nothing missed
+- He can point to a batch of emails and never have had to manually log them into the tracking tool
 - Soft target: his daily ~1 hour of email-to-spreadsheet copying shrinks because he's reviewing a short "what I added" list instead of retyping from emails

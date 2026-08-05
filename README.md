@@ -10,10 +10,10 @@ At the Adult Emergency Shelter (200+ guests served daily), that means at least a
 
 ## What this is
 
-A tool that reads a batch of case-manager emails, pulls out the outcomes mentioned in them (completed, or in-progress/needs follow-up), and writes the new ones straight into Chris's tracking spreadsheet — replacing the manual copy/note-from-email step he does today.
+A tool that reads a batch of case-manager emails, pulls out the outcomes mentioned in them (completed, or in-progress/needs follow-up), and writes the new ones straight into Chris's outcomes tracking tool — replacing the manual copy/note-from-email-into-a-spreadsheet step he does today.
 
-**It reads from:** case-manager emails + `Outcomes.xls` (the file listing every outcome the shelter tracks)
-**It writes to:** that same tracking spreadsheet — nothing else
+**It reads from:** case-manager emails + `Outcomes.xls` (the file listing every outcome the shelter tracks, used to categorize each extracted outcome by Classification/Type)
+**It writes to:** the tracking tool itself — this fully replaces `Outcomes.xls` as the destination, nothing else
 **It does not write to:** HMIS, at any stage. HMIS is a live case-management system this project never touches.
 
 ## Status
@@ -28,7 +28,7 @@ V1, in progress. Two-week build.
 
 ## Roadmap (not in V1, not now)
 
-Slack → spreadsheet for the Family Shelter, new-guest registration tracking, guest needs/follow-up tracking, a case-manager dashboard, and the rest of the automation wishlist. See `brief.md` and `PRD.md` for the full list.
+Slack → tracking tool for the Family Shelter, new-guest registration tracking, guest needs/follow-up tracking, a broader case-manager dashboard, and the rest of the automation wishlist. See `brief.md` and `PRD.md` for the full list.
 
 ## Data
 
