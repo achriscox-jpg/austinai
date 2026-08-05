@@ -56,6 +56,11 @@ review by hand; nothing is moved, checked off, or deleted automatically.
 - Only CSV is supported — an `.xls`/`.xlsx` upload is rejected with a message to re-export as CSV first
 - Expected columns: Guest ID, Classification, Type (header names matched loosely)
 - The uploaded file is never saved — it's parsed in the browser for one comparison pass and discarded
+- Matches are marked directly on the record with a small warning (⚠) badge in a dedicated column on
+  both tables, so the flag is visible back on the main Outcomes page, not just in the Reconcile page's
+  results list. Clicking the badge dismisses it — a human decision, not automatic.
+- Each new reconciliation run clears flags from the previous run before applying fresh ones, so nothing
+  stale lingers from an older report
 
 ## Explicitly not included (for now)
 

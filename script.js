@@ -228,6 +228,14 @@ function typeOptionsHtml(classification, selected) {
   return html;
 }
 
+// Leftmost column in both tables -- shows a dismissible warning badge
+// when a reconciliation upload has flagged this record as a possible
+// match (see runReconcileComparison).
+function flagCellHtml(r) {
+  if (!r.possibleMatch) return `<td class="flag-cell"></td>`;
+  return `<td class="flag-cell"><button class="flag-btn" data-id="${r.id}" title="Possible match found in a reconciliation report — click to dismiss">&#9888;</button></td>`;
+}
+
 // Small inline icons for buttons -- stroke="currentColor" so each one
 // automatically matches its button's text color (blue, red, neutral).
 const ICONS = {
@@ -281,6 +289,7 @@ function renderFollowup() {
     const tr = document.createElement("tr");
     if (editingFollowupId === r.id) {
       tr.innerHTML = `
+        ${flagCellHtml(r)}
         <td><input type="text" data-field="guestId" value="${escapeAttr(r.guestId)}"></td>
         <td><input type="text" data-field="guest" value="${escapeAttr(r.guest)}"></td>
         <td><select data-field="classification" class="classification-select">${classificationOptionsHtml(r.classification)}</select></td>
@@ -295,6 +304,7 @@ function renderFollowup() {
         </td>`;
     } else {
       tr.innerHTML = `
+        ${flagCellHtml(r)}
         <td><span class="id-tag">${escapeHtml(r.guestId)}</span></td>
         <td>${escapeHtml(r.guest)}</td>
         <td><span class="badge">${escapeHtml(r.classification)}</span></td>
@@ -341,6 +351,7 @@ function renderCompleted() {
     const tr = document.createElement("tr");
     if (editingCompletedId === r.id) {
       tr.innerHTML = `
+        ${flagCellHtml(r)}
         <td><input type="text" data-field="guestId" value="${escapeAttr(r.guestId)}"></td>
         <td><input type="text" data-field="guest" value="${escapeAttr(r.guest)}"></td>
         <td><select data-field="classification" class="classification-select">${classificationOptionsHtml(r.classification)}</select></td>
@@ -356,6 +367,7 @@ function renderCompleted() {
         </td>`;
     } else {
       tr.innerHTML = `
+        ${flagCellHtml(r)}
         <td><span class="id-tag">${escapeHtml(r.guestId)}</span></td>
         <td>${escapeHtml(r.guest)}</td>
         <td><span class="badge">${escapeHtml(r.classification)}</span></td>
@@ -423,6 +435,19 @@ function moveToFollowup(id) {
   highlightId = id;
   renderCompleted();
   renderFollowup();
+}
+
+// Dismiss a reconciliation possible-match flag -- purely visual, doesn't
+// touch anything else about the record.
+function dismissPossibleMatch(table, id) {
+  const key = table === "completed" ? STORAGE_KEYS.completed : STORAGE_KEYS.followup;
+  const records = loadRecords(key);
+  const record = records.find((r) => r.id === id);
+  if (!record) return;
+  delete record.possibleMatch;
+  saveRecords(key, records);
+  if (table === "completed") renderCompleted();
+  else renderFollowup();
 }
 
 // ---------- delete with undo ----------
@@ -520,6 +545,8 @@ function wireFollowupTable() {
       deleteWithUndo("followup", id);
     } else if (btn.classList.contains("complete-btn")) {
       moveToCompleted(id);
+    } else if (btn.classList.contains("flag-btn")) {
+      dismissPossibleMatch("followup", id);
     }
   });
 
@@ -560,6 +587,8 @@ function wireCompletedTable() {
       deleteWithUndo("completed", id);
     } else if (btn.classList.contains("revert-btn")) {
       moveToFollowup(id);
+    } else if (btn.classList.contains("flag-btn")) {
+      dismissPossibleMatch("completed", id);
     }
   });
 
@@ -814,17 +843,35 @@ function runReconcileComparison(csvText, messageEl, resultsSection, resultsTbody
     reportKeys.add(reconcileMatchKey(r[guestIdIdx], r[classificationIdx], r[typeIdx]));
   }
 
+  // Clear any flags from a previous reconciliation run before applying
+  // fresh ones -- a new upload supersedes the last one, nothing lingers.
+  const followups = loadRecords(STORAGE_KEYS.followup);
+  const completedRecords = loadRecords(STORAGE_KEYS.completed);
+  followups.forEach((r) => delete r.possibleMatch);
+  completedRecords.forEach((r) => delete r.possibleMatch);
+
   const matches = [];
-  loadRecords(STORAGE_KEYS.followup).forEach((r) => {
+  followups.forEach((r) => {
     if (reportKeys.has(reconcileMatchKey(r.guestId, r.classification, r.type))) {
+      r.possibleMatch = true;
       matches.push({ ...r, sourceTable: "Needs Follow-up" });
     }
   });
-  loadRecords(STORAGE_KEYS.completed).forEach((r) => {
+  completedRecords.forEach((r) => {
     if (reportKeys.has(reconcileMatchKey(r.guestId, r.classification, r.type))) {
+      r.possibleMatch = true;
       matches.push({ ...r, sourceTable: "Completed" });
     }
   });
+
+  saveRecords(STORAGE_KEYS.followup, followups);
+  saveRecords(STORAGE_KEYS.completed, completedRecords);
+  // No-op if the main tables aren't on this page (they're not, on
+  // reconcile.html) -- both functions guard on missing elements. The
+  // flags are already persisted to storage regardless, so the main
+  // Outcomes page will show them on next load.
+  renderFollowup();
+  renderCompleted();
 
   resultsTbody.innerHTML = "";
   countEl.textContent = matches.length;
@@ -836,7 +883,7 @@ function runReconcileComparison(csvText, messageEl, resultsSection, resultsTbody
   }
 
   messageEl.textContent =
-    "Compared against " + (rows.length - 1) + " report row(s) — review these on the main Outcomes page.";
+    "Compared against " + (rows.length - 1) + " report row(s) — flagged on the main Outcomes page too, marked with a ⚠.";
 
   matches.forEach((r) => {
     const tr = document.createElement("tr");
