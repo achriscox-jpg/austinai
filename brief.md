@@ -20,6 +20,8 @@ His own definition of solved: *"a tool that pulls confirmed and potential future
 3. **Write:** add each new outcome into the tracking tool, filed under the right Classification/Type — this replaces the manual copy-into-spreadsheet step Chris currently does by hand
 4. **Output:** the updated tracking tool, plus a short "here's what I added" summary so Chris is reviewing a change log, not retyping from raw emails
 
+**Also included:** a manual reconciliation check — Chris can upload a redacted CSV export of already-logged outcomes (e.g. run from HMIS) and the tool flags possible matches (same guest, same outcome) already sitting in either table. This is a heads-up for human review, not automatic deduplication — nothing moves, gets checked off, or gets deleted on its own.
+
 **Deliberately left out of V1** (see roadmap): Slack, new-guest tracking, and the broader case-manager dashboard (roadmap item 4 — length-of-stay + guest needs; a different, later thing from this V1 tracking tool). Writing into HMIS itself isn't on the table at all — it's a live case-management system, not something this tool writes to at any stage. Chris's own tracking tool is his working system now (no more `Outcomes.xls` as the destination — it fully replaces it), so writing to it directly is the right amount of automation for two weeks. This keeps V1 to one data source (email), one destination (his tracking tool), and one output (an updated record + change log) — buildable and testable against real redacted data he already has in hand.
 
 ## Roadmap — Not Building Now, Building Later

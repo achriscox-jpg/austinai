@@ -22,6 +22,13 @@ Chris Cox, at the Adult Emergency Shelter (200+ guests served daily):
 | Write | Add each new outcome into the tracking tool, filed under the right Classification/Type — this replaces the manual copy-into-spreadsheet step Chris currently does by hand |
 | Output | The updated tracking tool, plus a short "here's what I added" summary so Chris is reviewing a change log, not retyping from raw emails |
 
+### Reconciliation (manual, human-reviewed — also included in V1)
+A separate, on-demand check: Chris uploads a manually-run, PII-redacted CSV export of already-logged
+outcomes (e.g. from HMIS), and the tool compares it against both tables by Guest ID + Classification +
+Type. Matches are surfaced as a list for Chris to review by hand — this is explicitly a heads-up, not
+automatic deduplication. Nothing is moved, checked off, or deleted without him doing it. The uploaded
+file is used for one comparison pass and is not saved anywhere.
+
 ### Explicitly out of scope for V1
 - Slack (Family Shelter channel)
 - New-guest registration tracking
