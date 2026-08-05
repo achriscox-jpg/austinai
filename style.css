@@ -1,0 +1,203 @@
+:root {
+  --border: #d0d0d0;
+  --bg: #ffffff;
+  --bg-alt: #f6f6f6;
+  --text: #1a1a1a;
+  --muted: #666666;
+  --accent: #2c5f8a;
+  --danger: #a33;
+  --danger-bg: #fdeeee;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  font-family: -apple-system, Segoe UI, Arial, sans-serif;
+  color: var(--text);
+  background: var(--bg);
+  font-size: 14px;
+  line-height: 1.4;
+}
+
+header {
+  border-bottom: 1px solid var(--border);
+  padding: 12px 24px;
+  display: flex;
+  align-items: baseline;
+  gap: 24px;
+  background: var(--bg-alt);
+}
+
+header h1 {
+  font-size: 18px;
+  margin: 0;
+  white-space: nowrap;
+}
+
+nav {
+  display: flex;
+  gap: 16px;
+}
+
+nav a {
+  color: var(--text);
+  text-decoration: none;
+  padding: 4px 2px;
+  border-bottom: 2px solid transparent;
+}
+
+nav a:hover {
+  color: var(--accent);
+}
+
+nav a.active {
+  border-bottom: 2px solid var(--accent);
+  font-weight: 600;
+}
+
+main {
+  padding: 24px;
+  max-width: 1200px;
+  margin: 0 auto;
+}
+
+section {
+  margin-bottom: 32px;
+}
+
+section h2 {
+  font-size: 15px;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+  color: var(--muted);
+  margin: 0 0 8px 0;
+}
+
+table {
+  width: 100%;
+  border-collapse: collapse;
+  background: var(--bg);
+}
+
+th, td {
+  border: 1px solid var(--border);
+  padding: 6px 8px;
+  text-align: left;
+  vertical-align: top;
+}
+
+th {
+  background: var(--bg-alt);
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+td.truncate {
+  max-width: 320px;
+  white-space: normal;
+  overflow-wrap: break-word;
+}
+
+tbody tr:hover {
+  background: var(--bg-alt);
+}
+
+td.actions {
+  white-space: nowrap;
+}
+
+button {
+  font: inherit;
+  padding: 4px 8px;
+  margin-right: 4px;
+  border: 1px solid var(--border);
+  background: var(--bg);
+  color: var(--text);
+  border-radius: 3px;
+  cursor: pointer;
+}
+
+button:hover {
+  background: var(--bg-alt);
+}
+
+button.save-btn {
+  border-color: var(--accent);
+  color: var(--accent);
+}
+
+button.delete-btn {
+  color: var(--danger);
+}
+
+button.delete-btn:hover {
+  background: var(--danger-bg);
+}
+
+input[type="text"], input[type="date"], textarea, select {
+  font: inherit;
+  width: 100%;
+  padding: 3px 5px;
+  border: 1px solid var(--border);
+  border-radius: 3px;
+}
+
+textarea {
+  min-height: 40px;
+  resize: vertical;
+}
+
+.empty-state {
+  color: var(--muted);
+  font-style: italic;
+  padding: 8px 0;
+}
+
+.checkbox-cell {
+  text-align: center;
+}
+
+.checkbox-cell input {
+  width: auto;
+  transform: scale(1.2);
+}
+
+/* Add-record form page */
+form.record-form {
+  max-width: 560px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+form.record-form label {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  font-weight: 600;
+}
+
+form.record-form .form-actions {
+  display: flex;
+  gap: 8px;
+  margin-top: 8px;
+}
+
+form.record-form .form-actions a {
+  align-self: center;
+  color: var(--muted);
+  text-decoration: none;
+}
+
+form.record-form .form-actions a:hover {
+  text-decoration: underline;
+}
+
+.hint {
+  color: var(--muted);
+  font-weight: normal;
+  font-size: 12px;
+}
