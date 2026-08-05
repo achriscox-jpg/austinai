@@ -244,6 +244,21 @@ const ICONS = {
 let editingFollowupId = null;
 let editingCompletedId = null;
 
+// Set right before a render call to briefly flash the row matching this
+// id in that table's accent color -- confirms a move/add landed, rather
+// than the list just silently re-rendering. Consumed (cleared) on use.
+let highlightId = null;
+const HIGHLIGHT_STORAGE_KEY = "outcomesTool_highlight";
+
+function flashRow(tr, colorVar) {
+  tr.style.backgroundColor = `var(${colorVar})`;
+  requestAnimationFrame(() => {
+    requestAnimationFrame(() => {
+      tr.style.backgroundColor = "";
+    });
+  });
+}
+
 function renderFollowup() {
   const tableEl = document.getElementById("followup-table");
   if (!tableEl) return;
@@ -297,6 +312,10 @@ function renderFollowup() {
       tr.dataset.dragId = r.id;
     }
     tbody.appendChild(tr);
+    if (highlightId === r.id) {
+      flashRow(tr, "--row-hover-red");
+      highlightId = null;
+    }
   });
 }
 
@@ -357,6 +376,10 @@ function renderCompleted() {
       tr.dataset.dragId = r.id;
     }
     tbody.appendChild(tr);
+    if (highlightId === r.id) {
+      flashRow(tr, "--row-hover-blue");
+      highlightId = null;
+    }
   });
 }
 
@@ -380,6 +403,7 @@ function moveToCompleted(id) {
   completed.push({ ...record, verified: false });
   saveRecords(STORAGE_KEYS.completed, completed);
 
+  highlightId = id;
   renderFollowup();
   renderCompleted();
 }
@@ -396,6 +420,7 @@ function moveToFollowup(id) {
   followups.push(record);
   saveRecords(STORAGE_KEYS.followup, followups);
 
+  highlightId = id;
   renderCompleted();
   renderFollowup();
 }
@@ -458,6 +483,7 @@ function deleteWithUndo(table, id) {
     const insertAt = Math.min(pendingDelete.index, restoreRecords.length);
     restoreRecords.splice(insertAt, 0, pendingDelete.record);
     saveRecords(restoreKey, restoreRecords);
+    highlightId = pendingDelete.record.id;
     if (pendingDelete.table === "completed") renderCompleted();
     else renderFollowup();
     pendingDelete = null;
@@ -659,6 +685,7 @@ function wireAddForm() {
       saveRecords(STORAGE_KEYS.followup, records);
     }
 
+    sessionStorage.setItem(HIGHLIGHT_STORAGE_KEY, record.id);
     window.location.href = "index.html";
   });
 }
@@ -666,6 +693,12 @@ function wireAddForm() {
 // ---------- init ----------
 
 document.addEventListener("DOMContentLoaded", () => {
+  const storedHighlight = sessionStorage.getItem(HIGHLIGHT_STORAGE_KEY);
+  if (storedHighlight) {
+    highlightId = storedHighlight;
+    sessionStorage.removeItem(HIGHLIGHT_STORAGE_KEY);
+  }
+
   wireFollowupTable();
   wireCompletedTable();
   renderFollowup();

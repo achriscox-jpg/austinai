@@ -121,6 +121,11 @@ main {
   padding: 18px 20px 6px;
   margin-bottom: 28px;
   animation: card-in 0.35s ease both;
+  transition: transform 0.15s ease;
+}
+
+.card:hover {
+  transform: translateY(-2px);
 }
 
 .card:nth-of-type(2) {
@@ -186,6 +191,21 @@ tbody tr.dragging {
   line-height: 1.6;
 }
 
+/* Section identity: Completed is blue (the .count-badge default above),
+   Needs Follow-up is red -- matching each card's accent stripe. */
+#completed-section .card-header h2 {
+  color: var(--accent);
+}
+
+#followup-section .card-header h2 {
+  color: var(--brand-red);
+}
+
+#followup-count {
+  background: var(--danger-bg);
+  color: var(--brand-red);
+}
+
 .hint {
   color: var(--muted);
   font-weight: normal;
@@ -226,6 +246,10 @@ th {
   position: sticky;
   top: 0;
   z-index: 1;
+}
+
+tbody tr {
+  transition: background-color 0.6s ease;
 }
 
 tbody tr:nth-child(even) {
