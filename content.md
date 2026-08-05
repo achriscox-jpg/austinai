@@ -9,8 +9,8 @@ Two tables, same fields:
 **Needs Follow-up**
 - ID
 - Guest name
-- Classification (broad category, e.g. Housing, Employment, Benefits)
-- Type (the specific outcome within that category)
+- Classification (broad category) — dropdown, sourced from the shelter's outcome taxonomy (`Outcomes renamed headers.xls`)
+- Type (the specific outcome within that category) — dropdown, options narrow to match the chosen Classification
 - Date
 - Case manager
 - Source email reference/snippet

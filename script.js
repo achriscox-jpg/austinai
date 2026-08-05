@@ -33,6 +33,201 @@ function escapeAttr(str) {
   return escapeHtml(str).replace(/"/g, "&quot;").replace(/'/g, "&#39;");
 }
 
+// Classification -> Type reference list, from "Outcomes renamed headers.xls"
+// (the shelter's full outcome taxonomy — not guest data).
+const OUTCOME_TAXONOMY = {
+  "Abuse": [
+    "Successful linkage and ongoing services w/Victim's Services",
+    "Successful linkage and ongoing services with Anger Management Counseling",
+    "Successful linkage and ongoing services with DV Counseling",
+  ],
+  "Benefits": [
+    "Attend Stand Down for Veterans",
+    "Obtain Government Cell Phone",
+    "Obtain Link Card/SNAP",
+    "Obtain medical card/Medicaid",
+    "Obtain Medicare",
+    "Obtain pension/401(k)/non-SS retirement funds",
+    "Obtain Reduced Fare ID from RTA",
+    "Obtain SS Retirement benefits",
+    "Obtain SSDI benefits",
+    "Obtain SSI benefits",
+    "Obtain TANF",
+    "Obtain Unemployment benefits",
+    "Obtain VA Benefits",
+    "Obtain WIC",
+  ],
+  "Children's Services": [
+    "Complete School Enrollment",
+    "Obtain non-subsidized child care",
+    "Obtain school bus transportation for children",
+    "Obtain services with Big Brothers/Big Sisters",
+    "Obtain subsidized child care",
+    "Obtain visitation with children",
+    "Successful enrollment in youth program",
+  ],
+  "CHP Housing Only": [
+    "Maintain Housing for 6 Months",
+    "Maintain Housing for 12 Months",
+    "Maintain Housing for 18 Months",
+    "Maintain Housing for 24 Months",
+  ],
+  "Education": [
+    "Obtain degree/diploma",
+    "Obtain GED",
+    "Obtain scholarship/financial assistance for education",
+    "Successful completion of Waubonsee Employment Skills Program",
+  ],
+  "Employment": [
+    "Complete certification program",
+    "Complete interviewing seminar",
+    "Complete resume workshop",
+    "Maintain employment for more than 90 days",
+    "Obtain employment authorization document",
+    "Obtain employment related license/certification",
+    "Obtain FT employment",
+    "Obtain promotion/raise at work",
+    "Obtain PT employment",
+    "Obtain temp/seasonal employment",
+    "Successfully complete employment skills program",
+  ],
+  "Financial": [
+    "Complete annual income tax return(s)",
+    "Complete consumer credit counseling classes",
+    "Create and maintain a budget for three months",
+    "Establish a payment plan on bills/fines",
+    "Establish checking account",
+    "Establish savings account",
+    "Improve credit score",
+    "Meet an established savings goal",
+    "Obtain Child Support",
+    "Obtain Rental/Utility Assistance",
+    "Obtain/Refinance loan on non-predatory terms",
+    "Pay bills on time for more than one month",
+    "Pay off court fines",
+  ],
+  "Harm Reduction": [
+    "Abstinence from drug of choice for 30 days",
+    "Reach predetermined harm reduction milestone",
+  ],
+  "Housing": [
+    "Move into housing situation with friends/family",
+    "Obtain appropriate housing through linkage to other residential program",
+    "Obtain emergency housing at other OES program",
+    "Obtain home",
+    "Obtain housing at assisted living facility/nursing home",
+    "Obtain non-subsidized rental housing",
+    "Obtain Permanent Supportive Housing",
+    "Obtain subsidized rental Housing",
+    "Obtain transitional housing at Lifesprings program",
+    "Obtain transitional housing at Mutual Ground program",
+    "Obtain transitional housing at TLC Program",
+    "Maintain Housing for 6 Months",
+    "Maintain Housing for 12 Months",
+    "Maintain Housing for 18 Months",
+    "Maintain Housing for 24 Months",
+  ],
+  "Identification": [
+    "Obtain birth certificate",
+    "Obtain DD214 (veterans identification document)",
+    "Obtain driver's license",
+    "Obtain necessary immigration documentation",
+    "Obtain Social Security card",
+    "Obtain State Disabled Person ID",
+    "Obtain State ID",
+    "Obtain Voter's Registration card",
+  ],
+  "Legal": [
+    "Resolve civil legal issue",
+    "Resolve criminal legal issue",
+    "Successful Linkage to Legal Services",
+  ],
+  "Life Skills": [
+    "Learned cleaning life skill",
+    "Learned cooking life skill",
+    "Learned interpersonal/coping life skills",
+    "Learned self-care life skill",
+  ],
+  "Mental Health": [
+    "Admission to residential psychiatric program",
+    "Attended necessary psychiatric appointment",
+    "Demonstrated ability to continuously self-administer psych medication",
+    "Demonstrated increased self-coping skills to manage mental health",
+    "Demonstrated necessary self-coping skills to manage mental health crisis",
+    "Maintained counseling appointments for 60 days or until completion",
+    "Obtain individual or group counseling with Out-Patient Mental Health Treatment",
+    "Obtained counseling services through Intensive Stabilization Program",
+    "Obtained individual/group counseling services w/AID",
+    "Obtained individual/group counseling services w/Crisis Intervention worker through Crisis Line",
+    "Obtained individual/group counseling services w/Gateway",
+    "Obtained individual/group counseling services w/Samaritan Interfaith Counseling",
+    "Obtained monthly medications for more than one month",
+  ],
+  "Physical Health": [
+    "Access specialty care at Cook County Hospital",
+    "Obtain access to specialty care provider",
+    "Obtain eyeglasses",
+    "Obtain meds through prescription assistance program",
+    "Obtain necessary dental procedure",
+    "Obtain necessary medical procedure",
+    "Obtain necessary prescription medication",
+    "Successfully completed medication regime for recovery from acute illness",
+    "Successfully managed chronic illness for minimum of 30 days",
+  ],
+  "Substance Abuse": [
+    "Admission to half-way house program",
+    "Admission to in-patient program",
+    "Attend individual/group weekly for more for 30 days.",
+    "Complete SA treatment plan",
+    "Maintain sobriety for 30 days",
+    "Successful linkage and ongoing services with Breaking Free",
+    "Successful linkage and ongoing services with Gateway",
+    "Successful linkage and ongoing services with out-patient program",
+    "Successful linkage to detox program",
+    "Successful linkage with support group for 30 days",
+  ],
+  "Support Systems": [
+    "Attend Stand Down for Veterans",
+    "Establish connection with faith community and attend regularly for more than one month",
+    "Re-establish positive relationship with immediate family member.",
+  ],
+  "Transportation": [
+    "Learned to use public transportation system",
+    "Obtain and successfully utilize RIK",
+    "Obtain car insurance",
+    "Obtain current vehicle registration and plates",
+    "Obtain long-distance transportation for significant event",
+    "Obtain monthly bus pass",
+    "Obtain Reduced Fare ID from RTA",
+    "Obtain vehicle",
+    "Set up  and follow through with alternative transportation plan for 30 days",
+  ],
+};
+
+function classificationOptionsHtml(selected) {
+  const classifications = Object.keys(OUTCOME_TAXONOMY);
+  let html = `<option value="">-- Select --</option>`;
+  if (selected && !classifications.includes(selected)) {
+    html += `<option value="${escapeAttr(selected)}" selected>${escapeHtml(selected)}</option>`;
+  }
+  classifications.forEach((c) => {
+    html += `<option value="${escapeAttr(c)}"${c === selected ? " selected" : ""}>${escapeHtml(c)}</option>`;
+  });
+  return html;
+}
+
+function typeOptionsHtml(classification, selected) {
+  const types = OUTCOME_TAXONOMY[classification] || [];
+  let html = `<option value="">-- Select --</option>`;
+  if (selected && !types.includes(selected)) {
+    html += `<option value="${escapeAttr(selected)}" selected>${escapeHtml(selected)}</option>`;
+  }
+  types.forEach((t) => {
+    html += `<option value="${escapeAttr(t)}"${t === selected ? " selected" : ""}>${escapeHtml(t)}</option>`;
+  });
+  return html;
+}
+
 // ---------- index.html: the two tables ----------
 
 let editingFollowupId = null;
@@ -62,8 +257,8 @@ function renderFollowup() {
       tr.innerHTML = `
         <td><input type="text" data-field="guestId" value="${escapeAttr(r.guestId)}"></td>
         <td><input type="text" data-field="guest" value="${escapeAttr(r.guest)}"></td>
-        <td><input type="text" data-field="classification" value="${escapeAttr(r.classification)}"></td>
-        <td><input type="text" data-field="type" value="${escapeAttr(r.type)}"></td>
+        <td><select data-field="classification" class="classification-select">${classificationOptionsHtml(r.classification)}</select></td>
+        <td><select data-field="type" class="type-select">${typeOptionsHtml(r.classification, r.type)}</select></td>
         <td><input type="date" data-field="date" value="${escapeAttr(r.date)}"></td>
         <td><input type="text" data-field="caseManager" value="${escapeAttr(r.caseManager)}"></td>
         <td><textarea data-field="sourceSnippet">${escapeHtml(r.sourceSnippet)}</textarea></td>
@@ -116,8 +311,8 @@ function renderCompleted() {
       tr.innerHTML = `
         <td><input type="text" data-field="guestId" value="${escapeAttr(r.guestId)}"></td>
         <td><input type="text" data-field="guest" value="${escapeAttr(r.guest)}"></td>
-        <td><input type="text" data-field="classification" value="${escapeAttr(r.classification)}"></td>
-        <td><input type="text" data-field="type" value="${escapeAttr(r.type)}"></td>
+        <td><select data-field="classification" class="classification-select">${classificationOptionsHtml(r.classification)}</select></td>
+        <td><select data-field="type" class="type-select">${typeOptionsHtml(r.classification, r.type)}</select></td>
         <td><input type="date" data-field="date" value="${escapeAttr(r.date)}"></td>
         <td><input type="text" data-field="caseManager" value="${escapeAttr(r.caseManager)}"></td>
         <td><textarea data-field="sourceSnippet">${escapeHtml(r.sourceSnippet)}</textarea></td>
@@ -203,6 +398,12 @@ function wireFollowupTable() {
       renderCompleted();
     }
   });
+
+  tbody.addEventListener("change", (e) => {
+    if (!e.target.classList.contains("classification-select")) return;
+    const typeSelect = e.target.closest("tr").querySelector(".type-select");
+    if (typeSelect) typeSelect.innerHTML = typeOptionsHtml(e.target.value, "");
+  });
 }
 
 function wireCompletedTable() {
@@ -253,6 +454,12 @@ function wireCompletedTable() {
   });
 
   tbody.addEventListener("change", (e) => {
+    if (e.target.classList.contains("classification-select")) {
+      const typeSelect = e.target.closest("tr").querySelector(".type-select");
+      if (typeSelect) typeSelect.innerHTML = typeOptionsHtml(e.target.value, "");
+      return;
+    }
+
     if (!e.target.classList.contains("verified-checkbox")) return;
     const id = e.target.dataset.id;
     if (!e.target.checked) return;
@@ -275,6 +482,16 @@ function wireAddForm() {
   const dateInput = form.querySelector('[name="date"]');
   if (dateInput && !dateInput.value) {
     dateInput.valueAsDate = new Date();
+  }
+
+  const classificationSelect = form.querySelector('[name="classification"]');
+  const typeSelect = form.querySelector('[name="type"]');
+  if (classificationSelect && typeSelect) {
+    classificationSelect.innerHTML = classificationOptionsHtml("");
+    typeSelect.innerHTML = typeOptionsHtml("", "");
+    classificationSelect.addEventListener("change", () => {
+      typeSelect.innerHTML = typeOptionsHtml(classificationSelect.value, "");
+    });
   }
 
   form.addEventListener("submit", (e) => {
