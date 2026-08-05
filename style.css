@@ -219,6 +219,31 @@ tbody tr:hover {
   background: var(--accent-tint);
 }
 
+/* Per-row accent stripe + tinted zebra/hover, echoing each card's
+   accent stripe -- blue for Completed, red for Needs Follow-up. */
+#completed-table th:first-child,
+#completed-table td:first-child {
+  border-left: 3px solid var(--accent);
+}
+
+#completed-table tbody tr:nth-child(even) {
+  background: var(--accent-tint);
+}
+
+#followup-table th:first-child,
+#followup-table td:first-child {
+  border-left: 3px solid var(--brand-red);
+}
+
+#followup-table tbody tr:nth-child(even) {
+  background: var(--danger-bg);
+}
+
+#followup-table tbody tr:hover {
+  background: var(--danger-bg);
+  filter: brightness(0.97);
+}
+
 td.truncate {
   max-width: 320px;
   white-space: normal;
