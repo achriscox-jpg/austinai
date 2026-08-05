@@ -1,14 +1,37 @@
 :root {
-  --border: #d0d0d0;
+  --border: #d8d8d8;
   --bg: #ffffff;
-  --bg-alt: #f6f6f6;
+  --bg-alt: #f6f7f8;
+  --card-bg: #ffffff;
   --text: #1a1a1a;
-  --muted: #666666;
+  --muted: #676c72;
   --accent: #1c6ea4;       /* blue, from the logo's "H" */
-  --accent-dark: #155783;  /* hover/darker shade of accent */
+  --accent-dark: #14567f;  /* hover/darker shade of accent */
+  --accent-tint: #e8f2f9;  /* light wash of accent, for badges/rings */
   --brand-red: #dc3c2d;    /* red, from the logo's roof */
   --danger: #b23321;       /* close to brand red, still reads as destructive */
   --danger-bg: #fdecea;
+  --zebra: rgba(0, 0, 0, 0.02);
+  --shadow: 0 1px 2px rgba(20, 20, 20, 0.05), 0 1px 8px rgba(20, 20, 20, 0.04);
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --border: #3a3d40;
+    --bg: #17181a;
+    --bg-alt: #202225;
+    --card-bg: #1d1f22;
+    --text: #ececec;
+    --muted: #9aa0a6;
+    --accent: #5aa8de;
+    --accent-dark: #7fbdea;
+    --accent-tint: #1d3140;
+    --brand-red: #e8695a;
+    --danger: #e8695a;
+    --danger-bg: #3a1f1d;
+    --zebra: rgba(255, 255, 255, 0.025);
+    --shadow: 0 1px 2px rgba(0, 0, 0, 0.3), 0 1px 10px rgba(0, 0, 0, 0.25);
+  }
 }
 
 * {
@@ -17,40 +40,55 @@
 
 body {
   margin: 0;
-  font-family: -apple-system, Segoe UI, Arial, sans-serif;
+  font-family: -apple-system, "Segoe UI", Arial, sans-serif;
   color: var(--text);
-  background: var(--bg);
+  background: var(--bg-alt);
   font-size: 14px;
-  line-height: 1.4;
+  line-height: 1.45;
 }
 
+/* ---------- Header / nav ---------- */
+
 header {
+  display: flex;
+  align-items: center;
+  gap: 20px;
+  padding: 12px 24px;
+  background: var(--bg);
   border-bottom: 1px solid var(--border);
   border-top: 4px solid var(--brand-red);
-  padding: 12px 24px;
+}
+
+.brand {
   display: flex;
-  align-items: baseline;
-  gap: 24px;
-  background: var(--bg-alt);
+  align-items: center;
+  gap: 10px;
+}
+
+.brand svg {
+  flex: none;
 }
 
 header h1 {
-  font-size: 18px;
+  font-size: 17px;
   margin: 0;
   white-space: nowrap;
-  color: var(--accent);
+  font-weight: 700;
+  letter-spacing: -0.01em;
 }
 
 nav {
   display: flex;
-  gap: 16px;
+  gap: 20px;
 }
 
 nav a {
-  color: var(--text);
+  color: var(--muted);
   text-decoration: none;
   padding: 4px 2px;
   border-bottom: 2px solid transparent;
+  font-weight: 600;
+  transition: color 0.12s ease, border-color 0.12s ease;
 }
 
 nav a:hover {
@@ -60,44 +98,100 @@ nav a:hover {
 nav a.active {
   border-bottom: 2px solid var(--accent);
   color: var(--accent);
-  font-weight: 600;
 }
 
+/* ---------- Layout ---------- */
+
 main {
-  padding: 24px;
+  padding: 28px 24px 48px;
   max-width: 1200px;
   margin: 0 auto;
 }
 
-section {
-  margin-bottom: 32px;
+.card {
+  background: var(--card-bg);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  box-shadow: var(--shadow);
+  padding: 18px 20px 6px;
+  margin-bottom: 28px;
 }
 
-section h2 {
-  font-size: 15px;
+.card-header {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 12px;
+  flex-wrap: wrap;
+}
+
+.card-header h2 {
+  font-size: 13px;
   text-transform: uppercase;
-  letter-spacing: 0.03em;
+  letter-spacing: 0.05em;
   color: var(--muted);
-  margin: 0 0 8px 0;
+  margin: 0;
+  font-weight: 700;
+}
+
+.count-badge {
+  background: var(--accent-tint);
+  color: var(--accent);
+  font-size: 12px;
+  font-weight: 700;
+  padding: 1px 9px;
+  border-radius: 999px;
+  line-height: 1.6;
+}
+
+.hint {
+  color: var(--muted);
+  font-weight: normal;
+  font-size: 12px;
+}
+
+/* ---------- Tables ---------- */
+
+.table-scroll {
+  overflow: auto;
+  max-height: 60vh;
+  margin: 0 -20px;
+  padding: 0 20px;
 }
 
 table {
   width: 100%;
   border-collapse: collapse;
-  background: var(--bg);
+  background: var(--card-bg);
 }
 
 th, td {
-  border: 1px solid var(--border);
-  padding: 6px 8px;
+  border: none;
+  border-bottom: 1px solid var(--border);
+  padding: 9px 10px;
   text-align: left;
   vertical-align: top;
 }
 
 th {
   background: var(--bg-alt);
-  font-weight: 600;
+  color: var(--muted);
+  font-weight: 700;
+  font-size: 12px;
+  text-transform: uppercase;
+  letter-spacing: 0.02em;
   white-space: nowrap;
+  position: sticky;
+  top: 0;
+  z-index: 1;
+}
+
+tbody tr:nth-child(even) {
+  background: var(--zebra);
+}
+
+tbody tr:hover {
+  background: var(--accent-tint);
 }
 
 td.truncate {
@@ -106,32 +200,65 @@ td.truncate {
   overflow-wrap: break-word;
 }
 
-tbody tr:hover {
-  background: var(--bg-alt);
-}
-
 td.actions {
   white-space: nowrap;
 }
 
+.id-tag {
+  font-family: ui-monospace, SFMono-Regular, Consolas, monospace;
+  font-size: 12px;
+  color: var(--muted);
+}
+
+.badge {
+  display: inline-block;
+  background: var(--bg-alt);
+  border: 1px solid var(--border);
+  color: var(--text);
+  font-size: 12px;
+  padding: 2px 9px;
+  border-radius: 999px;
+  white-space: nowrap;
+}
+
+/* ---------- Buttons ---------- */
+
 button {
   font: inherit;
-  padding: 4px 8px;
+  padding: 5px 10px;
   margin-right: 4px;
   border: 1px solid var(--border);
   background: var(--bg);
   color: var(--text);
-  border-radius: 3px;
+  border-radius: 5px;
   cursor: pointer;
+  transition: background 0.12s ease, border-color 0.12s ease, color 0.12s ease;
 }
 
 button:hover {
   background: var(--bg-alt);
 }
 
-button.save-btn {
+button.btn-primary {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: #fff;
+  font-weight: 600;
+}
+
+button.btn-primary:hover {
+  background: var(--accent-dark);
+  border-color: var(--accent-dark);
+}
+
+button.complete-btn {
   border-color: var(--accent);
   color: var(--accent);
+  font-weight: 600;
+}
+
+button.complete-btn:hover {
+  background: var(--accent-tint);
 }
 
 button.delete-btn {
@@ -140,14 +267,24 @@ button.delete-btn {
 
 button.delete-btn:hover {
   background: var(--danger-bg);
+  border-color: var(--danger);
 }
+
+:is(button, a, input, textarea, select):focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
+/* ---------- Form controls ---------- */
 
 input[type="text"], input[type="date"], textarea, select {
   font: inherit;
   width: 100%;
-  padding: 3px 5px;
+  padding: 5px 7px;
   border: 1px solid var(--border);
-  border-radius: 3px;
+  border-radius: 5px;
+  background: var(--bg);
+  color: var(--text);
 }
 
 textarea {
@@ -155,10 +292,8 @@ textarea {
   resize: vertical;
 }
 
-.empty-state {
-  color: var(--muted);
-  font-style: italic;
-  padding: 8px 0;
+input[type="checkbox"] {
+  accent-color: var(--accent);
 }
 
 .checkbox-cell {
@@ -167,15 +302,22 @@ textarea {
 
 .checkbox-cell input {
   width: auto;
-  transform: scale(1.2);
+  transform: scale(1.25);
 }
 
-/* Add-record form page */
+.empty-state {
+  color: var(--muted);
+  font-style: italic;
+  padding: 10px 0 18px;
+}
+
+/* ---------- Add-record form page ---------- */
+
 form.record-form {
   max-width: 560px;
   display: flex;
   flex-direction: column;
-  gap: 12px;
+  gap: 14px;
 }
 
 form.record-form label {
@@ -187,22 +329,16 @@ form.record-form label {
 
 form.record-form .form-actions {
   display: flex;
-  gap: 8px;
-  margin-top: 8px;
+  align-items: center;
+  gap: 12px;
+  margin-top: 6px;
 }
 
 form.record-form .form-actions a {
-  align-self: center;
   color: var(--muted);
   text-decoration: none;
 }
 
 form.record-form .form-actions a:hover {
   text-decoration: underline;
-}
-
-.hint {
-  color: var(--muted);
-  font-weight: normal;
-  font-size: 12px;
 }

@@ -44,14 +44,16 @@ function renderFollowup() {
   const records = loadRecords(STORAGE_KEYS.followup);
   const tbody = tableEl.querySelector("tbody");
   const emptyEl = document.getElementById("followup-empty");
+  const countEl = document.getElementById("followup-count");
+  if (countEl) countEl.textContent = records.length;
   tbody.innerHTML = "";
 
   if (records.length === 0) {
-    tableEl.style.display = "none";
+    tableEl.closest(".table-scroll").style.display = "none";
     emptyEl.style.display = "block";
     return;
   }
-  tableEl.style.display = "table";
+  tableEl.closest(".table-scroll").style.display = "block";
   emptyEl.style.display = "none";
 
   records.forEach((r) => {
@@ -66,14 +68,14 @@ function renderFollowup() {
         <td><textarea data-field="sourceSnippet">${escapeHtml(r.sourceSnippet)}</textarea></td>
         <td><textarea data-field="notes">${escapeHtml(r.notes)}</textarea></td>
         <td class="actions">
-          <button class="save-btn" data-id="${r.id}">Save</button>
+          <button class="save-btn btn-primary" data-id="${r.id}">Save</button>
           <button class="cancel-btn" data-id="${r.id}">Cancel</button>
         </td>`;
     } else {
       tr.innerHTML = `
-        <td>${escapeHtml(r.guestId)}</td>
+        <td><span class="id-tag">${escapeHtml(r.guestId)}</span></td>
         <td>${escapeHtml(r.guest)}</td>
-        <td>${escapeHtml(r.outcomeType)}</td>
+        <td><span class="badge">${escapeHtml(r.outcomeType)}</span></td>
         <td>${escapeHtml(r.date)}</td>
         <td>${escapeHtml(r.caseManager)}</td>
         <td class="truncate" title="${escapeAttr(r.sourceSnippet)}">${escapeHtml(r.sourceSnippet)}</td>
@@ -94,14 +96,16 @@ function renderCompleted() {
   const records = loadRecords(STORAGE_KEYS.completed);
   const tbody = tableEl.querySelector("tbody");
   const emptyEl = document.getElementById("completed-empty");
+  const countEl = document.getElementById("completed-count");
+  if (countEl) countEl.textContent = records.length;
   tbody.innerHTML = "";
 
   if (records.length === 0) {
-    tableEl.style.display = "none";
+    tableEl.closest(".table-scroll").style.display = "none";
     emptyEl.style.display = "block";
     return;
   }
-  tableEl.style.display = "table";
+  tableEl.closest(".table-scroll").style.display = "block";
   emptyEl.style.display = "none";
 
   records.forEach((r) => {
@@ -117,14 +121,14 @@ function renderCompleted() {
         <td><textarea data-field="notes">${escapeHtml(r.notes)}</textarea></td>
         <td class="checkbox-cell">&mdash;</td>
         <td class="actions">
-          <button class="save-btn" data-id="${r.id}">Save</button>
+          <button class="save-btn btn-primary" data-id="${r.id}">Save</button>
           <button class="cancel-btn" data-id="${r.id}">Cancel</button>
         </td>`;
     } else {
       tr.innerHTML = `
-        <td>${escapeHtml(r.guestId)}</td>
+        <td><span class="id-tag">${escapeHtml(r.guestId)}</span></td>
         <td>${escapeHtml(r.guest)}</td>
-        <td>${escapeHtml(r.outcomeType)}</td>
+        <td><span class="badge">${escapeHtml(r.outcomeType)}</span></td>
         <td>${escapeHtml(r.date)}</td>
         <td>${escapeHtml(r.caseManager)}</td>
         <td class="truncate" title="${escapeAttr(r.sourceSnippet)}">${escapeHtml(r.sourceSnippet)}</td>

@@ -3,12 +3,19 @@
 <head>
   <meta charset="UTF-8">
   <title>Outcomes Review Tool</title>
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpolygon points='12,2 22,11 2,11' fill='%23dc3c2d'/%3E%3Crect x='5' y='11' width='14' height='11' rx='1' fill='%231c6ea4'/%3E%3C/svg%3E">
   <link rel="stylesheet" href="style.css">
 </head>
 <body>
 
 <header>
-  <h1>Outcomes Review Tool</h1>
+  <div class="brand">
+    <svg width="26" height="26" viewBox="0 0 24 24" aria-hidden="true">
+      <polygon points="12,2 22,11 2,11" style="fill: var(--brand-red)"></polygon>
+      <rect x="5" y="11" width="14" height="11" rx="1" style="fill: var(--accent)"></rect>
+    </svg>
+    <h1>Outcomes Review Tool</h1>
+  </div>
   <nav>
     <a href="index.html" class="active">Outcomes</a>
     <a href="add.html">Add Outcome</a>
@@ -16,44 +23,55 @@
 </header>
 
 <main>
-  <section id="completed-section">
-    <h2>Completed <span class="hint">&mdash; check off once verified in Outcomes.xls; it then drops off this list</span></h2>
-    <table id="completed-table">
-      <thead>
-        <tr>
-          <th>ID</th>
-          <th>Guest</th>
-          <th>Outcome Type</th>
-          <th>Date</th>
-          <th>Case Manager</th>
-          <th>Source Email</th>
-          <th>Notes</th>
-          <th>Verified in Spreadsheet</th>
-          <th>Actions</th>
-        </tr>
-      </thead>
-      <tbody></tbody>
-    </table>
+  <section class="card" id="completed-section">
+    <div class="card-header">
+      <h2>Completed</h2>
+      <span class="count-badge" id="completed-count">0</span>
+      <span class="hint">check off once verified in Outcomes.xls; it then drops off this list</span>
+    </div>
+    <div class="table-scroll">
+      <table id="completed-table">
+        <thead>
+          <tr>
+            <th>ID</th>
+            <th>Guest</th>
+            <th>Outcome Type</th>
+            <th>Date</th>
+            <th>Case Manager</th>
+            <th>Source Email</th>
+            <th>Notes</th>
+            <th>Verified in Spreadsheet</th>
+            <th>Actions</th>
+          </tr>
+        </thead>
+        <tbody></tbody>
+      </table>
+    </div>
     <p class="empty-state" id="completed-empty">No completed outcomes yet.</p>
   </section>
 
-  <section id="followup-section">
-    <h2>Needs Follow-up</h2>
-    <table id="followup-table">
-      <thead>
-        <tr>
-          <th>ID</th>
-          <th>Guest</th>
-          <th>Outcome Type</th>
-          <th>Date</th>
-          <th>Case Manager</th>
-          <th>Source Email</th>
-          <th>Follow-up Notes</th>
-          <th>Actions</th>
-        </tr>
-      </thead>
-      <tbody></tbody>
-    </table>
+  <section class="card" id="followup-section">
+    <div class="card-header">
+      <h2>Needs Follow-up</h2>
+      <span class="count-badge" id="followup-count">0</span>
+    </div>
+    <div class="table-scroll">
+      <table id="followup-table">
+        <thead>
+          <tr>
+            <th>ID</th>
+            <th>Guest</th>
+            <th>Outcome Type</th>
+            <th>Date</th>
+            <th>Case Manager</th>
+            <th>Source Email</th>
+            <th>Follow-up Notes</th>
+            <th>Actions</th>
+          </tr>
+        </thead>
+        <tbody></tbody>
+      </table>
+    </div>
     <p class="empty-state" id="followup-empty">No follow-ups yet.</p>
   </section>
 </main>
