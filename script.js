@@ -62,7 +62,8 @@ function renderFollowup() {
       tr.innerHTML = `
         <td><input type="text" data-field="guestId" value="${escapeAttr(r.guestId)}"></td>
         <td><input type="text" data-field="guest" value="${escapeAttr(r.guest)}"></td>
-        <td><input type="text" data-field="outcomeType" value="${escapeAttr(r.outcomeType)}"></td>
+        <td><input type="text" data-field="classification" value="${escapeAttr(r.classification)}"></td>
+        <td><input type="text" data-field="type" value="${escapeAttr(r.type)}"></td>
         <td><input type="date" data-field="date" value="${escapeAttr(r.date)}"></td>
         <td><input type="text" data-field="caseManager" value="${escapeAttr(r.caseManager)}"></td>
         <td><textarea data-field="sourceSnippet">${escapeHtml(r.sourceSnippet)}</textarea></td>
@@ -75,7 +76,8 @@ function renderFollowup() {
       tr.innerHTML = `
         <td><span class="id-tag">${escapeHtml(r.guestId)}</span></td>
         <td>${escapeHtml(r.guest)}</td>
-        <td><span class="badge">${escapeHtml(r.outcomeType)}</span></td>
+        <td><span class="badge">${escapeHtml(r.classification)}</span></td>
+        <td>${escapeHtml(r.type)}</td>
         <td>${escapeHtml(r.date)}</td>
         <td>${escapeHtml(r.caseManager)}</td>
         <td class="truncate" title="${escapeAttr(r.sourceSnippet)}">${escapeHtml(r.sourceSnippet)}</td>
@@ -114,7 +116,8 @@ function renderCompleted() {
       tr.innerHTML = `
         <td><input type="text" data-field="guestId" value="${escapeAttr(r.guestId)}"></td>
         <td><input type="text" data-field="guest" value="${escapeAttr(r.guest)}"></td>
-        <td><input type="text" data-field="outcomeType" value="${escapeAttr(r.outcomeType)}"></td>
+        <td><input type="text" data-field="classification" value="${escapeAttr(r.classification)}"></td>
+        <td><input type="text" data-field="type" value="${escapeAttr(r.type)}"></td>
         <td><input type="date" data-field="date" value="${escapeAttr(r.date)}"></td>
         <td><input type="text" data-field="caseManager" value="${escapeAttr(r.caseManager)}"></td>
         <td><textarea data-field="sourceSnippet">${escapeHtml(r.sourceSnippet)}</textarea></td>
@@ -128,7 +131,8 @@ function renderCompleted() {
       tr.innerHTML = `
         <td><span class="id-tag">${escapeHtml(r.guestId)}</span></td>
         <td>${escapeHtml(r.guest)}</td>
-        <td><span class="badge">${escapeHtml(r.outcomeType)}</span></td>
+        <td><span class="badge">${escapeHtml(r.classification)}</span></td>
+        <td>${escapeHtml(r.type)}</td>
         <td>${escapeHtml(r.date)}</td>
         <td>${escapeHtml(r.caseManager)}</td>
         <td class="truncate" title="${escapeAttr(r.sourceSnippet)}">${escapeHtml(r.sourceSnippet)}</td>
@@ -265,7 +269,8 @@ function wireAddForm() {
       id: makeId(),
       guestId: data.get("guestId").trim(),
       guest: data.get("guest").trim(),
-      outcomeType: data.get("outcomeType").trim(),
+      classification: data.get("classification").trim(),
+      type: data.get("type").trim(),
       date: data.get("date"),
       caseManager: data.get("caseManager").trim(),
       sourceSnippet: data.get("sourceSnippet").trim(),

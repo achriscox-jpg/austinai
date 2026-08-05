@@ -9,7 +9,8 @@ Two tables, same fields:
 **Needs Follow-up**
 - ID
 - Guest name
-- Outcome type
+- Classification (broad category, e.g. Housing, Employment, Benefits)
+- Type (the specific outcome within that category)
 - Date
 - Case manager
 - Source email reference/snippet
