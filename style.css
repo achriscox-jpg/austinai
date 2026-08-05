@@ -12,6 +12,8 @@
   --danger: #b23321;       /* close to brand red, still reads as destructive */
   --danger-bg: #fdecea;
   --zebra: rgba(0, 0, 0, 0.02);
+  --row-hover-blue: #d2e6f2;  /* distinct from --accent-tint, used for zebra */
+  --row-hover-red: #f8d7d1;   /* distinct from --danger-bg, used for zebra */
   --shadow: 0 1px 2px rgba(20, 20, 20, 0.05), 0 1px 8px rgba(20, 20, 20, 0.04);
 }
 
@@ -30,6 +32,8 @@
     --danger: #e8695a;
     --danger-bg: #3a1f1d;
     --zebra: rgba(255, 255, 255, 0.025);
+    --row-hover-blue: #2b4c63;
+    --row-hover-red: #542e29;
     --shadow: 0 1px 2px rgba(0, 0, 0, 0.3), 0 1px 10px rgba(0, 0, 0, 0.25);
   }
 }
@@ -215,13 +219,15 @@ tbody tr:nth-child(even) {
   background: var(--zebra);
 }
 
-tbody tr:hover {
+/* Tinted zebra per table -- blue for Completed, red for Needs Follow-up.
+   Hover uses a distinct, stronger tint so it's never mistaken for a
+   zebra-striped row. */
+#completed-table tbody tr:nth-child(even) {
   background: var(--accent-tint);
 }
 
-/* Tinted zebra/hover per table -- blue for Completed, red for Needs Follow-up. */
-#completed-table tbody tr:nth-child(even) {
-  background: var(--accent-tint);
+#completed-table tbody tr:hover {
+  background: var(--row-hover-blue);
 }
 
 #followup-table tbody tr:nth-child(even) {
@@ -229,8 +235,7 @@ tbody tr:hover {
 }
 
 #followup-table tbody tr:hover {
-  background: var(--danger-bg);
-  filter: brightness(0.97);
+  background: var(--row-hover-red);
 }
 
 td.truncate {
