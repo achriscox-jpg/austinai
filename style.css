@@ -12,8 +12,8 @@
   --danger: #b23321;       /* close to brand red, still reads as destructive */
   --danger-bg: #fdecea;
   --zebra: rgba(0, 0, 0, 0.02);
-  --row-hover-blue: #d2e6f2;  /* distinct from --accent-tint, used for zebra */
-  --row-hover-red: #f8d7d1;   /* distinct from --danger-bg, used for zebra */
+  --row-hover-blue: #aad0e7;  /* distinct from --accent-tint, used for zebra */
+  --row-hover-red: #f1b1a5;   /* distinct from --danger-bg, used for zebra */
   --review: #0f6a63;          /* possible-match flag from reconciliation -- calm teal, not a warning color */
   --review-bg: #e3f4f2;
   --shadow: 0 1px 2px rgba(20, 20, 20, 0.05), 0 1px 8px rgba(20, 20, 20, 0.04);
@@ -34,8 +34,8 @@
     --danger: #e8695a;
     --danger-bg: #3a1f1d;
     --zebra: rgba(255, 255, 255, 0.025);
-    --row-hover-blue: #2b4c63;
-    --row-hover-red: #542e29;
+    --row-hover-blue: #1c313f;
+    --row-hover-red: #321b18;
     --review: #5cc9bd;
     --review-bg: #163330;
     --shadow: 0 1px 2px rgba(0, 0, 0, 0.3), 0 1px 10px rgba(0, 0, 0, 0.25);
