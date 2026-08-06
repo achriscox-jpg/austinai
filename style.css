@@ -270,7 +270,11 @@ tbody tr:nth-child(even) {
   background: var(--accent-tint);
 }
 
-#completed-table tbody tr:hover {
+/* .group-hover is applied by JS to every row belonging to a record (main +
+   Source Email + Notes) when the pointer is over any of the three, so the
+   whole record highlights together instead of just the one row under the
+   cursor. */
+#completed-table tbody tr.group-hover {
   background: var(--row-hover-blue);
 }
 
@@ -278,7 +282,7 @@ tbody tr:nth-child(even) {
   background: var(--danger-bg);
 }
 
-#followup-table tbody tr:hover {
+#followup-table tbody tr.group-hover {
   background: var(--row-hover-red);
 }
 

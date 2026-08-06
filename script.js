@@ -444,6 +444,30 @@ function renderCompleted() {
   });
 }
 
+// A record's main row, Source Email row, and Notes row are separate <tr>s,
+// so plain CSS :hover only lights up whichever one the pointer happens to
+// be over. Track the hovered record's id and toggle .group-hover on every
+// row sharing it, so mousing over any part of a record highlights all
+// three rows together.
+function wireRecordGroupHover(tbody) {
+  let activeId = null;
+  function setActive(id) {
+    if (id === activeId) return;
+    if (activeId) {
+      tbody.querySelectorAll(`tr[data-record-id="${activeId}"]`).forEach((tr) => tr.classList.remove("group-hover"));
+    }
+    activeId = id;
+    if (activeId) {
+      tbody.querySelectorAll(`tr[data-record-id="${activeId}"]`).forEach((tr) => tr.classList.add("group-hover"));
+    }
+  }
+  tbody.addEventListener("mouseover", (e) => {
+    const tr = e.target.closest("tr[data-record-id]");
+    setActive(tr ? tr.dataset.recordId : null);
+  });
+  tbody.addEventListener("mouseleave", () => setActive(null));
+}
+
 // A record now spans three rows (main row + Source Email row + Notes row),
 // so its data-field inputs are no longer all inside one <tr>. Gather them
 // by matching every row tagged with this record's id instead.
@@ -571,6 +595,7 @@ function wireFollowupTable() {
   const tableEl = document.getElementById("followup-table");
   if (!tableEl) return;
   const tbody = tableEl.querySelector("tbody");
+  wireRecordGroupHover(tbody);
 
   tbody.addEventListener("click", (e) => {
     const btn = e.target.closest("button");
@@ -613,6 +638,7 @@ function wireCompletedTable() {
   const tableEl = document.getElementById("completed-table");
   if (!tableEl) return;
   const tbody = tableEl.querySelector("tbody");
+  wireRecordGroupHover(tbody);
 
   tbody.addEventListener("click", (e) => {
     const btn = e.target.closest("button");
