@@ -253,6 +253,22 @@ const ICONS = {
 let editingFollowupId = null;
 let editingCompletedId = null;
 
+// Column counts for each table's main row -- used as the colspan on the
+// full-width Source Email / Notes rows below it, so those rows span every
+// column instead of one.
+const FOLLOWUP_COLSPAN = 8; // flag, ID, Guest, Classification, Type, Date, Case Manager, Actions
+const COMPLETED_COLSPAN = 9; // + Documented in HMIS
+
+// Builds the <td> for a full-width detail row (Source Email / Notes) that
+// runs beneath a record's main row. Read-only shows a scrollable snippet
+// like the old table cell did; editing mode swaps in a full-width textarea.
+function detailCellHtml(label, fieldName, value, editing, colspan) {
+  const body = editing
+    ? `<textarea data-field="${fieldName}" class="detail-textarea">${escapeHtml(value)}</textarea>`
+    : `<div class="cell-scroll" title="${escapeAttr(value)}">${escapeHtml(value)}</div>`;
+  return `<td class="detail-cell" colspan="${colspan}"><span class="detail-label">${escapeHtml(label)}</span>${body}</td>`;
+}
+
 // Set right before a render call to briefly flash the row matching this
 // id in that table's accent color -- confirms a move/add landed, rather
 // than the list just silently re-rendering. Consumed (cleared) on use.
@@ -286,9 +302,14 @@ function renderFollowup() {
   tableEl.closest(".table-scroll").style.display = "block";
   emptyEl.style.display = "none";
 
-  records.forEach((r) => {
+  records.forEach((r, i) => {
+    const groupClass = i % 2 === 0 ? "row-group-odd" : "row-group-even";
+    const editing = editingFollowupId === r.id;
+
     const tr = document.createElement("tr");
-    if (editingFollowupId === r.id) {
+    tr.className = groupClass;
+    tr.dataset.recordId = r.id;
+    if (editing) {
       tr.innerHTML = `
         ${flagCellHtml(r)}
         <td><input type="text" data-field="guestId" value="${escapeAttr(r.guestId)}"></td>
@@ -297,8 +318,6 @@ function renderFollowup() {
         <td><select data-field="type" class="type-select">${typeOptionsHtml(r.classification, r.type)}</select></td>
         <td><input type="date" data-field="date" value="${escapeAttr(r.date)}"></td>
         <td><input type="text" data-field="caseManager" value="${escapeAttr(r.caseManager)}"></td>
-        <td><textarea data-field="sourceSnippet">${escapeHtml(r.sourceSnippet)}</textarea></td>
-        <td><textarea data-field="notes">${escapeHtml(r.notes)}</textarea></td>
         <td class="actions">
           <button class="save-btn btn-primary" data-id="${r.id}">${ICONS.check}Save</button>
           <button class="cancel-btn" data-id="${r.id}">${ICONS.x}Cancel</button>
@@ -312,8 +331,6 @@ function renderFollowup() {
         <td><span class="type-text">${escapeHtml(r.type)}</span></td>
         <td>${escapeHtml(r.date)}</td>
         <td>${escapeHtml(r.caseManager)}</td>
-        <td class="truncate"><div class="cell-scroll" title="${escapeAttr(r.sourceSnippet)}">${escapeHtml(r.sourceSnippet)}</div></td>
-        <td class="truncate"><div class="cell-scroll" title="${escapeAttr(r.notes)}">${escapeHtml(r.notes)}</div></td>
         <td class="actions">
           <button class="complete-btn" data-id="${r.id}">${ICONS.check}Move to Completed</button>
           <button class="edit-btn" data-id="${r.id}">${ICONS.pencil}Edit</button>
@@ -323,8 +340,23 @@ function renderFollowup() {
       tr.dataset.dragId = r.id;
     }
     tbody.appendChild(tr);
+
+    const sourceTr = document.createElement("tr");
+    sourceTr.className = `detail-row ${groupClass}`;
+    sourceTr.dataset.recordId = r.id;
+    sourceTr.innerHTML = detailCellHtml("Source Email", "sourceSnippet", r.sourceSnippet, editing, FOLLOWUP_COLSPAN);
+    tbody.appendChild(sourceTr);
+
+    const notesTr = document.createElement("tr");
+    notesTr.className = `detail-row ${groupClass}`;
+    notesTr.dataset.recordId = r.id;
+    notesTr.innerHTML = detailCellHtml("Follow-up Notes", "notes", r.notes, editing, FOLLOWUP_COLSPAN);
+    tbody.appendChild(notesTr);
+
     if (highlightId === r.id) {
       flashRow(tr, "--row-hover-red");
+      flashRow(sourceTr, "--row-hover-red");
+      flashRow(notesTr, "--row-hover-red");
       highlightId = null;
     }
   });
@@ -348,9 +380,14 @@ function renderCompleted() {
   tableEl.closest(".table-scroll").style.display = "block";
   emptyEl.style.display = "none";
 
-  records.forEach((r) => {
+  records.forEach((r, i) => {
+    const groupClass = i % 2 === 0 ? "row-group-odd" : "row-group-even";
+    const editing = editingCompletedId === r.id;
+
     const tr = document.createElement("tr");
-    if (editingCompletedId === r.id) {
+    tr.className = groupClass;
+    tr.dataset.recordId = r.id;
+    if (editing) {
       tr.innerHTML = `
         ${flagCellHtml(r)}
         <td><input type="text" data-field="guestId" value="${escapeAttr(r.guestId)}"></td>
@@ -359,8 +396,6 @@ function renderCompleted() {
         <td><select data-field="type" class="type-select">${typeOptionsHtml(r.classification, r.type)}</select></td>
         <td><input type="date" data-field="date" value="${escapeAttr(r.date)}"></td>
         <td><input type="text" data-field="caseManager" value="${escapeAttr(r.caseManager)}"></td>
-        <td><textarea data-field="sourceSnippet">${escapeHtml(r.sourceSnippet)}</textarea></td>
-        <td><textarea data-field="notes">${escapeHtml(r.notes)}</textarea></td>
         <td class="checkbox-cell">&mdash;</td>
         <td class="actions">
           <button class="save-btn btn-primary" data-id="${r.id}">${ICONS.check}Save</button>
@@ -375,8 +410,6 @@ function renderCompleted() {
         <td><span class="type-text">${escapeHtml(r.type)}</span></td>
         <td>${escapeHtml(r.date)}</td>
         <td>${escapeHtml(r.caseManager)}</td>
-        <td class="truncate"><div class="cell-scroll" title="${escapeAttr(r.sourceSnippet)}">${escapeHtml(r.sourceSnippet)}</div></td>
-        <td class="truncate"><div class="cell-scroll" title="${escapeAttr(r.notes)}">${escapeHtml(r.notes)}</div></td>
         <td class="checkbox-cell">
           <input type="checkbox" class="verified-checkbox" data-id="${r.id}">
         </td>
@@ -389,16 +422,34 @@ function renderCompleted() {
       tr.dataset.dragId = r.id;
     }
     tbody.appendChild(tr);
+
+    const sourceTr = document.createElement("tr");
+    sourceTr.className = `detail-row ${groupClass}`;
+    sourceTr.dataset.recordId = r.id;
+    sourceTr.innerHTML = detailCellHtml("Source Email", "sourceSnippet", r.sourceSnippet, editing, COMPLETED_COLSPAN);
+    tbody.appendChild(sourceTr);
+
+    const notesTr = document.createElement("tr");
+    notesTr.className = `detail-row ${groupClass}`;
+    notesTr.dataset.recordId = r.id;
+    notesTr.innerHTML = detailCellHtml("Notes", "notes", r.notes, editing, COMPLETED_COLSPAN);
+    tbody.appendChild(notesTr);
+
     if (highlightId === r.id) {
       flashRow(tr, "--row-hover-blue");
+      flashRow(sourceTr, "--row-hover-blue");
+      flashRow(notesTr, "--row-hover-blue");
       highlightId = null;
     }
   });
 }
 
-function readRowInputs(tr) {
+// A record now spans three rows (main row + Source Email row + Notes row),
+// so its data-field inputs are no longer all inside one <tr>. Gather them
+// by matching every row tagged with this record's id instead.
+function readRecordInputs(tbody, id) {
   const fields = {};
-  tr.querySelectorAll("[data-field]").forEach((el) => {
+  tbody.querySelectorAll(`tr[data-record-id="${id}"] [data-field]`).forEach((el) => {
     fields[el.dataset.field] = el.value;
   });
   return fields;
@@ -536,7 +587,7 @@ function wireFollowupTable() {
       const records = loadRecords(STORAGE_KEYS.followup);
       const idx = records.findIndex((r) => r.id === id);
       if (idx !== -1) {
-        const fields = readRowInputs(btn.closest("tr"));
+        const fields = readRecordInputs(tbody, id);
         records[idx] = { ...records[idx], ...fields };
         saveRecords(STORAGE_KEYS.followup, records);
       }
@@ -578,7 +629,7 @@ function wireCompletedTable() {
       const records = loadRecords(STORAGE_KEYS.completed);
       const idx = records.findIndex((r) => r.id === id);
       if (idx !== -1) {
-        const fields = readRowInputs(btn.closest("tr"));
+        const fields = readRecordInputs(tbody, id);
         records[idx] = { ...records[idx], ...fields };
         saveRecords(STORAGE_KEYS.completed, records);
       }

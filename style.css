@@ -262,8 +262,11 @@ tbody tr:nth-child(even) {
 
 /* Tinted zebra per table -- blue for Completed, red for Needs Follow-up.
    Hover uses a distinct, stronger tint so it's never mistaken for a
-   zebra-striped row. */
-#completed-table tbody tr:nth-child(even) {
+   zebra-striped row. Each record now spans three physical rows (main row
+   + Source Email row + Notes row), so striping is keyed off a row-group-*
+   class assigned per record rather than tr:nth-child, which would
+   otherwise stripe mid-record. */
+#completed-table tbody tr.row-group-even {
   background: var(--accent-tint);
 }
 
@@ -271,7 +274,7 @@ tbody tr:nth-child(even) {
   background: var(--row-hover-blue);
 }
 
-#followup-table tbody tr:nth-child(even) {
+#followup-table tbody tr.row-group-even {
   background: var(--danger-bg);
 }
 
@@ -280,17 +283,14 @@ tbody tr:nth-child(even) {
 }
 
 /* On the plain white (non-zebra) rows, echo the card's accent stripe --
-   the tinted rows already carry color via their background. */
-#completed-table tbody tr:nth-child(odd) td:first-child {
+   the tinted rows already carry color via their background. Applies to
+   every row in the group so the stripe runs continuously down the record. */
+#completed-table tbody tr.row-group-odd td:first-child {
   border-left: 3px solid var(--accent);
 }
 
-#followup-table tbody tr:nth-child(odd) td:first-child {
+#followup-table tbody tr.row-group-odd td:first-child {
   border-left: 3px solid var(--brand-red);
-}
-
-td.truncate {
-  max-width: 320px;
 }
 
 .cell-scroll {
@@ -312,6 +312,31 @@ td.truncate {
 
 .cell-scroll::-webkit-scrollbar-track {
   background: transparent;
+}
+
+/* Source Email / Notes rows -- run the full width of the record, directly
+   below its main row, instead of living in their own table column. */
+tr.detail-row td.detail-cell {
+  padding-top: 4px;
+  padding-bottom: 10px;
+}
+
+tr.detail-row .detail-label {
+  display: block;
+  color: var(--muted);
+  font-weight: 700;
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.02em;
+  margin-bottom: 3px;
+}
+
+tr.detail-row .cell-scroll {
+  max-height: 6em;
+}
+
+tr.detail-row .detail-textarea {
+  min-height: 60px;
 }
 
 td.actions {
