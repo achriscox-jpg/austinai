@@ -314,11 +314,27 @@ tbody tr:nth-child(even) {
   background: transparent;
 }
 
+/* A record is now 3 physical rows (main + Source Email + Notes). Drop the
+   border between those 3 so they read as one block, and put a single,
+   clearer divider only where one record ends and the next begins --
+   otherwise every row looks like its own record. */
+tbody tr:not(.record-end) > td {
+  border-bottom: none;
+}
+
+tbody tr.record-end > td {
+  border-bottom: 2px solid var(--border);
+}
+
 /* Source Email / Notes rows -- run the full width of the record, directly
    below its main row, instead of living in their own table column. */
 tr.detail-row td.detail-cell {
   padding-top: 4px;
   padding-bottom: 10px;
+}
+
+tr.detail-row.record-end td.detail-cell {
+  padding-bottom: 14px;
 }
 
 tr.detail-row .detail-label {

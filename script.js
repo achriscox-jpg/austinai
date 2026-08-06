@@ -348,7 +348,7 @@ function renderFollowup() {
     tbody.appendChild(sourceTr);
 
     const notesTr = document.createElement("tr");
-    notesTr.className = `detail-row ${groupClass}`;
+    notesTr.className = `detail-row record-end ${groupClass}`;
     notesTr.dataset.recordId = r.id;
     notesTr.innerHTML = detailCellHtml("Follow-up Notes", "notes", r.notes, editing, FOLLOWUP_COLSPAN);
     tbody.appendChild(notesTr);
@@ -430,7 +430,7 @@ function renderCompleted() {
     tbody.appendChild(sourceTr);
 
     const notesTr = document.createElement("tr");
-    notesTr.className = `detail-row ${groupClass}`;
+    notesTr.className = `detail-row record-end ${groupClass}`;
     notesTr.dataset.recordId = r.id;
     notesTr.innerHTML = detailCellHtml("Notes", "notes", r.notes, editing, COMPLETED_COLSPAN);
     tbody.appendChild(notesTr);
