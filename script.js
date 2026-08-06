@@ -1,26 +1,23 @@
-// Outcomes Review Tool — shared logic for index.html and add.html
-// Data is stored in the browser's localStorage (per-browser, local to this machine).
+// Outcomes Review Tool — shared logic for index.html, add.html, and reconcile.html
+// Data lives in Supabase (table: outcomes), not localStorage.
 
-const STORAGE_KEYS = {
-  completed: "outcomesTool_completed",
-  followup: "outcomesTool_followup",
+// Supabase connection — config.js (loaded before this file) sets window.SUPABASE_CONFIG.
+const supabaseClient =
+  window.supabase && window.SUPABASE_CONFIG
+    ? window.supabase.createClient(window.SUPABASE_CONFIG.url, window.SUPABASE_CONFIG.key)
+    : null;
+
+if (!supabaseClient) {
+  console.error("Supabase client not initialized — check that config.js is loaded before script.js.");
+}
+
+// The "table" a record is in (Needs Follow-up vs Completed) is really just
+// its status column value. These are the two values the status check
+// constraint allows.
+const STATUS = {
+  followup: "needs_follow_up",
+  completed: "completed",
 };
-
-function loadRecords(key) {
-  try {
-    return JSON.parse(localStorage.getItem(key) || "[]");
-  } catch (e) {
-    return [];
-  }
-}
-
-function saveRecords(key, records) {
-  localStorage.setItem(key, JSON.stringify(records));
-}
-
-function makeId() {
-  return "r" + Date.now().toString(36) + Math.random().toString(36).slice(2, 8);
-}
 
 function escapeHtml(str) {
   return String(str ?? "")
@@ -248,6 +245,88 @@ const ICONS = {
   magnifier: `<svg width="14" height="14" viewBox="0 0 16 16" aria-hidden="true"><circle cx="6.5" cy="6.5" r="4" fill="none" stroke="currentColor" stroke-width="1.6"/><line x1="9.5" y1="9.5" x2="13.5" y2="13.5" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg>`,
 };
 
+// ---------- Supabase data layer ----------
+// Maps between the app's internal field names (used throughout the render/
+// edit code below, unchanged from the localStorage version) and the
+// outcomes table's column names.
+
+function mapFromDb(row) {
+  return {
+    id: row.id,
+    status: row.status,
+    guestId: row.guest_id || "",
+    guest: row.guest_name || "",
+    classification: row.classification || "",
+    type: row.type || "",
+    date: row.date_identified || "",
+    caseManager: row.case_manager || "",
+    sourceSnippet: row.source_email || "",
+    notes: row.notes || "",
+    possibleMatch: !!row.possible_match,
+  };
+}
+
+function mapToDb(record) {
+  return {
+    guest_id: record.guestId || null,
+    guest_name: record.guest || "",
+    classification: record.classification || "",
+    type: record.type || "",
+    date_identified: record.date || null,
+    case_manager: record.caseManager || null,
+    source_email: record.sourceSnippet || null,
+    notes: record.notes || null,
+    possible_match: !!record.possibleMatch,
+  };
+}
+
+async function fetchRecordsByStatus(status) {
+  const { data, error } = await supabaseClient
+    .from("outcomes")
+    .select("*")
+    .eq("status", status)
+    .order("created_at", { ascending: true });
+  if (error) {
+    console.error("Failed to load outcomes:", error);
+    return [];
+  }
+  return data.map(mapFromDb);
+}
+
+async function insertRecord(record) {
+  const { data, error } = await supabaseClient
+    .from("outcomes")
+    .insert({ ...mapToDb(record), status: record.status })
+    .select()
+    .single();
+  if (error) {
+    console.error("Failed to add outcome:", error);
+    alert("Couldn't save that outcome. Check the console for details.");
+    return null;
+  }
+  return mapFromDb(data);
+}
+
+async function updateRecord(id, fields) {
+  const { error } = await supabaseClient.from("outcomes").update(fields).eq("id", id);
+  if (error) {
+    console.error("Failed to update outcome:", error);
+    alert("Couldn't save that change. Check the console for details.");
+    return false;
+  }
+  return true;
+}
+
+async function deleteRecord(id) {
+  const { error } = await supabaseClient.from("outcomes").delete().eq("id", id);
+  if (error) {
+    console.error("Failed to delete outcome:", error);
+    alert("Couldn't delete that record. Check the console for details.");
+    return false;
+  }
+  return true;
+}
+
 // ---------- index.html: the two tables ----------
 
 let editingFollowupId = null;
@@ -284,10 +363,10 @@ function flashRow(tr, colorVar) {
   });
 }
 
-function renderFollowup() {
+async function renderFollowup() {
   const tableEl = document.getElementById("followup-table");
   if (!tableEl) return;
-  const records = loadRecords(STORAGE_KEYS.followup);
+  const records = await fetchRecordsByStatus(STATUS.followup);
   const tbody = tableEl.querySelector("tbody");
   const emptyEl = document.getElementById("followup-empty");
   const countEl = document.getElementById("followup-count");
@@ -304,7 +383,7 @@ function renderFollowup() {
 
   records.forEach((r, i) => {
     const groupClass = i % 2 === 0 ? "row-group-odd" : "row-group-even";
-    const editing = editingFollowupId === r.id;
+    const editing = editingFollowupId === String(r.id);
 
     const tr = document.createElement("tr");
     tr.className = groupClass;
@@ -353,7 +432,7 @@ function renderFollowup() {
     notesTr.innerHTML = detailCellHtml("Follow-up Notes", "notes", r.notes, editing, FOLLOWUP_COLSPAN);
     tbody.appendChild(notesTr);
 
-    if (highlightId === r.id) {
+    if (highlightId === String(r.id)) {
       flashRow(tr, "--row-hover-red");
       flashRow(sourceTr, "--row-hover-red");
       flashRow(notesTr, "--row-hover-red");
@@ -362,10 +441,10 @@ function renderFollowup() {
   });
 }
 
-function renderCompleted() {
+async function renderCompleted() {
   const tableEl = document.getElementById("completed-table");
   if (!tableEl) return;
-  const records = loadRecords(STORAGE_KEYS.completed);
+  const records = await fetchRecordsByStatus(STATUS.completed);
   const tbody = tableEl.querySelector("tbody");
   const emptyEl = document.getElementById("completed-empty");
   const countEl = document.getElementById("completed-count");
@@ -382,7 +461,7 @@ function renderCompleted() {
 
   records.forEach((r, i) => {
     const groupClass = i % 2 === 0 ? "row-group-odd" : "row-group-even";
-    const editing = editingCompletedId === r.id;
+    const editing = editingCompletedId === String(r.id);
 
     const tr = document.createElement("tr");
     tr.className = groupClass;
@@ -435,13 +514,20 @@ function renderCompleted() {
     notesTr.innerHTML = detailCellHtml("Notes", "notes", r.notes, editing, COMPLETED_COLSPAN);
     tbody.appendChild(notesTr);
 
-    if (highlightId === r.id) {
+    if (highlightId === String(r.id)) {
       flashRow(tr, "--row-hover-blue");
       flashRow(sourceTr, "--row-hover-blue");
       flashRow(notesTr, "--row-hover-blue");
       highlightId = null;
     }
   });
+}
+
+// Re-fetches and redraws both tables -- used after any mutation, since a
+// record moving between statuses (or being added/deleted) can affect
+// either table's contents.
+async function renderAll() {
+  await Promise.all([renderFollowup(), renderCompleted()]);
 }
 
 // A record's main row, Source Email row, and Notes row are separate <tr>s,
@@ -480,55 +566,31 @@ function readRecordInputs(tbody, id) {
 }
 
 // Shared move logic -- used by both the row buttons and drag-and-drop.
-function moveToCompleted(id) {
-  const followups = loadRecords(STORAGE_KEYS.followup);
-  const idx = followups.findIndex((r) => r.id === id);
-  if (idx === -1) return;
-  const [record] = followups.splice(idx, 1);
-  saveRecords(STORAGE_KEYS.followup, followups);
-
-  const completed = loadRecords(STORAGE_KEYS.completed);
-  completed.push({ ...record, verified: false });
-  saveRecords(STORAGE_KEYS.completed, completed);
-
-  highlightId = id;
-  renderFollowup();
-  renderCompleted();
+async function moveToCompleted(id) {
+  const ok = await updateRecord(id, { status: STATUS.completed });
+  if (!ok) return;
+  highlightId = String(id);
+  await renderAll();
 }
 
-function moveToFollowup(id) {
-  const completed = loadRecords(STORAGE_KEYS.completed);
-  const idx = completed.findIndex((r) => r.id === id);
-  if (idx === -1) return;
-  const [record] = completed.splice(idx, 1);
-  saveRecords(STORAGE_KEYS.completed, completed);
-
-  delete record.verified;
-  const followups = loadRecords(STORAGE_KEYS.followup);
-  followups.push(record);
-  saveRecords(STORAGE_KEYS.followup, followups);
-
-  highlightId = id;
-  renderCompleted();
-  renderFollowup();
+async function moveToFollowup(id) {
+  const ok = await updateRecord(id, { status: STATUS.followup });
+  if (!ok) return;
+  highlightId = String(id);
+  await renderAll();
 }
 
 // Dismiss a reconciliation possible-match flag -- purely visual, doesn't
 // touch anything else about the record.
-function dismissPossibleMatch(table, id) {
-  const key = table === "completed" ? STORAGE_KEYS.completed : STORAGE_KEYS.followup;
-  const records = loadRecords(key);
-  const record = records.find((r) => r.id === id);
-  if (!record) return;
-  delete record.possibleMatch;
-  saveRecords(key, records);
-  if (table === "completed") renderCompleted();
-  else renderFollowup();
+async function dismissPossibleMatch(id) {
+  const ok = await updateRecord(id, { possible_match: false });
+  if (!ok) return;
+  await renderAll();
 }
 
 // ---------- delete with undo ----------
 
-let pendingDelete = null; // { table, record, index, timeoutId }
+let pendingDelete = null; // { record, timeoutId }
 const UNDO_WINDOW_MS = 7000;
 
 function getToastEl() {
@@ -558,15 +620,21 @@ function showUndoToast(message, onUndo) {
   };
 }
 
-function deleteWithUndo(table, id) {
-  const key = table === "completed" ? STORAGE_KEYS.completed : STORAGE_KEYS.followup;
-  const records = loadRecords(key);
-  const index = records.findIndex((r) => r.id === id);
-  if (index === -1) return;
-  const [record] = records.splice(index, 1);
-  saveRecords(key, records);
-  if (table === "completed") renderCompleted();
-  else renderFollowup();
+async function deleteWithUndo(id) {
+  const { data: row, error: fetchError } = await supabaseClient
+    .from("outcomes")
+    .select("*")
+    .eq("id", id)
+    .single();
+  if (fetchError || !row) {
+    console.error("Couldn't find that record to delete:", fetchError);
+    return;
+  }
+  const record = mapFromDb(row);
+
+  const ok = await deleteRecord(id);
+  if (!ok) return;
+  await renderAll();
 
   if (pendingDelete) clearTimeout(pendingDelete.timeoutId);
 
@@ -575,18 +643,15 @@ function deleteWithUndo(table, id) {
     hideToast();
   }, UNDO_WINDOW_MS);
 
-  pendingDelete = { table, record, index, timeoutId };
+  pendingDelete = { record, timeoutId };
 
-  showUndoToast(`Deleted ${record.guest || "record"}`, () => {
+  showUndoToast(`Deleted ${record.guest || "record"}`, async () => {
     clearTimeout(pendingDelete.timeoutId);
-    const restoreKey = pendingDelete.table === "completed" ? STORAGE_KEYS.completed : STORAGE_KEYS.followup;
-    const restoreRecords = loadRecords(restoreKey);
-    const insertAt = Math.min(pendingDelete.index, restoreRecords.length);
-    restoreRecords.splice(insertAt, 0, pendingDelete.record);
-    saveRecords(restoreKey, restoreRecords);
-    highlightId = pendingDelete.record.id;
-    if (pendingDelete.table === "completed") renderCompleted();
-    else renderFollowup();
+    const restored = await insertRecord(pendingDelete.record);
+    if (restored) {
+      highlightId = String(restored.id);
+      await renderAll();
+    }
     pendingDelete = null;
   });
 }
@@ -597,33 +662,28 @@ function wireFollowupTable() {
   const tbody = tableEl.querySelector("tbody");
   wireRecordGroupHover(tbody);
 
-  tbody.addEventListener("click", (e) => {
+  tbody.addEventListener("click", async (e) => {
     const btn = e.target.closest("button");
     const id = btn && btn.dataset.id;
     if (!id) return;
 
     if (btn.classList.contains("edit-btn")) {
       editingFollowupId = id;
-      renderFollowup();
+      await renderFollowup();
     } else if (btn.classList.contains("cancel-btn")) {
       editingFollowupId = null;
-      renderFollowup();
+      await renderFollowup();
     } else if (btn.classList.contains("save-btn")) {
-      const records = loadRecords(STORAGE_KEYS.followup);
-      const idx = records.findIndex((r) => r.id === id);
-      if (idx !== -1) {
-        const fields = readRecordInputs(tbody, id);
-        records[idx] = { ...records[idx], ...fields };
-        saveRecords(STORAGE_KEYS.followup, records);
-      }
+      const fields = readRecordInputs(tbody, id);
+      await updateRecord(id, mapToDb(fields));
       editingFollowupId = null;
-      renderFollowup();
+      await renderFollowup();
     } else if (btn.classList.contains("delete-btn")) {
-      deleteWithUndo("followup", id);
+      await deleteWithUndo(id);
     } else if (btn.classList.contains("complete-btn")) {
-      moveToCompleted(id);
+      await moveToCompleted(id);
     } else if (btn.classList.contains("flag-btn")) {
-      dismissPossibleMatch("followup", id);
+      await dismissPossibleMatch(id);
     }
   });
 
@@ -640,37 +700,32 @@ function wireCompletedTable() {
   const tbody = tableEl.querySelector("tbody");
   wireRecordGroupHover(tbody);
 
-  tbody.addEventListener("click", (e) => {
+  tbody.addEventListener("click", async (e) => {
     const btn = e.target.closest("button");
     const id = btn && btn.dataset.id;
     if (!id) return;
 
     if (btn.classList.contains("edit-btn")) {
       editingCompletedId = id;
-      renderCompleted();
+      await renderCompleted();
     } else if (btn.classList.contains("cancel-btn")) {
       editingCompletedId = null;
-      renderCompleted();
+      await renderCompleted();
     } else if (btn.classList.contains("save-btn")) {
-      const records = loadRecords(STORAGE_KEYS.completed);
-      const idx = records.findIndex((r) => r.id === id);
-      if (idx !== -1) {
-        const fields = readRecordInputs(tbody, id);
-        records[idx] = { ...records[idx], ...fields };
-        saveRecords(STORAGE_KEYS.completed, records);
-      }
+      const fields = readRecordInputs(tbody, id);
+      await updateRecord(id, mapToDb(fields));
       editingCompletedId = null;
-      renderCompleted();
+      await renderCompleted();
     } else if (btn.classList.contains("delete-btn")) {
-      deleteWithUndo("completed", id);
+      await deleteWithUndo(id);
     } else if (btn.classList.contains("revert-btn")) {
-      moveToFollowup(id);
+      await moveToFollowup(id);
     } else if (btn.classList.contains("flag-btn")) {
-      dismissPossibleMatch("completed", id);
+      await dismissPossibleMatch(id);
     }
   });
 
-  tbody.addEventListener("change", (e) => {
+  tbody.addEventListener("change", async (e) => {
     if (e.target.classList.contains("classification-select")) {
       const typeSelect = e.target.closest("tr").querySelector(".type-select");
       if (typeSelect) typeSelect.innerHTML = typeOptionsHtml(e.target.value, "");
@@ -684,9 +739,8 @@ function wireCompletedTable() {
       e.target.checked = false;
       return;
     }
-    const records = loadRecords(STORAGE_KEYS.completed).filter((r) => r.id !== id);
-    saveRecords(STORAGE_KEYS.completed, records);
-    renderCompleted();
+    const ok = await deleteRecord(id);
+    if (ok) await renderCompleted();
   });
 }
 
@@ -765,11 +819,11 @@ function wireAddForm() {
     });
   }
 
-  form.addEventListener("submit", (e) => {
+  form.addEventListener("submit", async (e) => {
     e.preventDefault();
     const data = new FormData(form);
+    const table = data.get("table");
     const record = {
-      id: makeId(),
       guestId: data.get("guestId").trim(),
       guest: data.get("guest").trim(),
       classification: data.get("classification").trim(),
@@ -778,21 +832,18 @@ function wireAddForm() {
       caseManager: data.get("caseManager").trim(),
       sourceSnippet: data.get("sourceSnippet").trim(),
       notes: data.get("notes").trim(),
+      status: table === "completed" ? STATUS.completed : STATUS.followup,
     };
 
-    const table = data.get("table");
-    if (table === "completed") {
-      record.verified = false;
-      const records = loadRecords(STORAGE_KEYS.completed);
-      records.push(record);
-      saveRecords(STORAGE_KEYS.completed, records);
-    } else {
-      const records = loadRecords(STORAGE_KEYS.followup);
-      records.push(record);
-      saveRecords(STORAGE_KEYS.followup, records);
-    }
+    const submitBtn = form.querySelector('button[type="submit"]');
+    if (submitBtn) submitBtn.disabled = true;
 
-    sessionStorage.setItem(HIGHLIGHT_STORAGE_KEY, record.id);
+    const inserted = await insertRecord(record);
+
+    if (submitBtn) submitBtn.disabled = false;
+    if (!inserted) return; // insertRecord already alerted on failure
+
+    sessionStorage.setItem(HIGHLIGHT_STORAGE_KEY, String(inserted.id));
     window.location.href = "index.html";
   });
 }
@@ -897,7 +948,7 @@ function wireReconcileForm() {
   });
 }
 
-function runReconcileComparison(csvText, messageEl, resultsSection, resultsTbody, countEl) {
+async function runReconcileComparison(csvText, messageEl, resultsSection, resultsTbody, countEl) {
   const rows = parseCsv(csvText).filter((r) => r.some((cell) => cell.trim() !== ""));
   if (rows.length < 2) {
     messageEl.textContent = "That file doesn't have any data rows to compare.";
@@ -921,35 +972,38 @@ function runReconcileComparison(csvText, messageEl, resultsSection, resultsTbody
     reportKeys.add(reconcileMatchKey(r[guestIdIdx], r[classificationIdx], r[typeIdx]));
   }
 
-  // Clear any flags from a previous reconciliation run before applying
-  // fresh ones -- a new upload supersedes the last one, nothing lingers.
-  const followups = loadRecords(STORAGE_KEYS.followup);
-  const completedRecords = loadRecords(STORAGE_KEYS.completed);
-  followups.forEach((r) => delete r.possibleMatch);
-  completedRecords.forEach((r) => delete r.possibleMatch);
+  const [followups, completedRecords] = await Promise.all([
+    fetchRecordsByStatus(STATUS.followup),
+    fetchRecordsByStatus(STATUS.completed),
+  ]);
+  const all = [...followups, ...completedRecords];
 
+  // Clear flags from a previous reconciliation run before applying fresh
+  // ones -- a new upload supersedes the last one, nothing lingers.
+  const matchedIds = [];
+  const unmatchedIds = [];
   const matches = [];
-  followups.forEach((r) => {
+  all.forEach((r) => {
     if (reportKeys.has(reconcileMatchKey(r.guestId, r.classification, r.type))) {
-      r.possibleMatch = true;
-      matches.push({ ...r, sourceTable: "Needs Follow-up" });
-    }
-  });
-  completedRecords.forEach((r) => {
-    if (reportKeys.has(reconcileMatchKey(r.guestId, r.classification, r.type))) {
-      r.possibleMatch = true;
-      matches.push({ ...r, sourceTable: "Completed" });
+      matchedIds.push(r.id);
+      matches.push({ ...r, sourceTable: r.status === STATUS.completed ? "Completed" : "Needs Follow-up" });
+    } else {
+      unmatchedIds.push(r.id);
     }
   });
 
-  saveRecords(STORAGE_KEYS.followup, followups);
-  saveRecords(STORAGE_KEYS.completed, completedRecords);
+  if (unmatchedIds.length > 0) {
+    await supabaseClient.from("outcomes").update({ possible_match: false }).in("id", unmatchedIds);
+  }
+  if (matchedIds.length > 0) {
+    await supabaseClient.from("outcomes").update({ possible_match: true }).in("id", matchedIds);
+  }
+
   // No-op if the main tables aren't on this page (they're not, on
-  // reconcile.html) -- both functions guard on missing elements. The
-  // flags are already persisted to storage regardless, so the main
+  // reconcile.html) -- both render functions guard on missing elements. The
+  // flags are already persisted in Supabase regardless, so the main
   // Outcomes page will show them on next load.
-  renderFollowup();
-  renderCompleted();
+  await renderAll();
 
   resultsTbody.innerHTML = "";
   countEl.textContent = matches.length;
@@ -987,8 +1041,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
   wireFollowupTable();
   wireCompletedTable();
-  renderFollowup();
-  renderCompleted();
+  renderAll();
   wireAddForm();
   wireDragAndDrop();
   wireReconcileForm();
