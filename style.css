@@ -216,6 +216,21 @@ tbody tr.dragging {
   font-size: 12px;
 }
 
+.later-toggle {
+  background: none;
+  border: none;
+  padding: 0;
+  margin-left: auto;
+  color: var(--muted);
+  font-size: 12px;
+  text-decoration: underline;
+  cursor: pointer;
+}
+
+.later-toggle:hover {
+  color: var(--brand-red);
+}
+
 /* ---------- Tables ---------- */
 
 .table-scroll {

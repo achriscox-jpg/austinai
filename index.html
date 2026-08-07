@@ -61,6 +61,7 @@
     <div class="card-header">
       <h2>Needs Follow-up</h2>
       <span class="count-badge" id="followup-count">0</span>
+      <button type="button" id="followup-later-toggle" class="later-toggle" style="display: none"></button>
     </div>
     <div class="table-scroll">
       <table id="followup-table">
@@ -72,6 +73,7 @@
             <th>Classification</th>
             <th>Type</th>
             <th>Date</th>
+            <th>Follow-up Due</th>
             <th>Case Manager</th>
             <th>Actions</th>
           </tr>
@@ -81,7 +83,7 @@
     </div>
     <p class="empty-state" id="followup-empty">
       <svg width="16" height="16" viewBox="0 0 16 16" aria-hidden="true"><path d="M2 5h12M2 8h12M2 11h8" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg>
-      No follow-ups yet.
+      <span id="followup-empty-text">No follow-ups yet.</span>
     </p>
   </section>
 </main>

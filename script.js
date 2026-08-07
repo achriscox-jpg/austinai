@@ -263,6 +263,7 @@ function mapFromDb(row) {
     sourceSnippet: row.source_email || "",
     notes: row.notes || "",
     possibleMatch: !!row.possible_match,
+    nextActionDate: row.next_action_date || "",
   };
 }
 
@@ -277,6 +278,7 @@ function mapToDb(record) {
     source_email: record.sourceSnippet || null,
     notes: record.notes || null,
     possible_match: !!record.possibleMatch,
+    next_action_date: record.nextActionDate || null,
   };
 }
 
@@ -335,8 +337,27 @@ let editingCompletedId = null;
 // Column counts for each table's main row -- used as the colspan on the
 // full-width Source Email / Notes rows below it, so those rows span every
 // column instead of one.
-const FOLLOWUP_COLSPAN = 8; // flag, ID, Guest, Classification, Type, Date, Case Manager, Actions
+const FOLLOWUP_COLSPAN = 9; // flag, ID, Guest, Classification, Type, Date, Follow-up Due, Case Manager, Actions
 const COMPLETED_COLSPAN = 9; // + Documented in HMIS
+
+// Follow-ups with a Next Action Date further out than this stay off the
+// dashboard (collapsed into a "later" count) until they're within this
+// many days of being due -- keeps far-off items from cluttering the list
+// the case manager actually needs to work today. A record with no date
+// set is always shown; there's nothing to wait on.
+const FOLLOWUP_HORIZON_DAYS = 14;
+
+function isDueSoon(record) {
+  if (!record.nextActionDate) return true;
+  const horizon = new Date();
+  horizon.setHours(0, 0, 0, 0);
+  horizon.setDate(horizon.getDate() + FOLLOWUP_HORIZON_DAYS);
+  return new Date(record.nextActionDate + "T00:00:00") <= horizon;
+}
+
+// Toggled by the "+N later" button in the Needs Follow-up card header.
+// Resets to false (hide later items) on every page load.
+let showAllFollowups = false;
 
 // Builds the <td> for a full-width detail row (Source Email / Notes) that
 // runs beneath a record's main row. Read-only shows a scrollable snippet
@@ -366,16 +387,37 @@ function flashRow(tr, colorVar) {
 async function renderFollowup() {
   const tableEl = document.getElementById("followup-table");
   if (!tableEl) return;
-  const records = await fetchRecordsByStatus(STATUS.followup);
+  const allRecords = await fetchRecordsByStatus(STATUS.followup);
+  const laterRecords = allRecords.filter((r) => !isDueSoon(r));
+  const records = showAllFollowups ? allRecords : allRecords.filter(isDueSoon);
   const tbody = tableEl.querySelector("tbody");
   const emptyEl = document.getElementById("followup-empty");
+  const emptyTextEl = document.getElementById("followup-empty-text");
   const countEl = document.getElementById("followup-count");
+  const laterToggle = document.getElementById("followup-later-toggle");
   if (countEl) countEl.textContent = records.length;
   tbody.innerHTML = "";
+
+  if (laterToggle) {
+    if (laterRecords.length === 0) {
+      laterToggle.style.display = "none";
+    } else {
+      laterToggle.style.display = "inline";
+      laterToggle.textContent = showAllFollowups
+        ? `Hide ${laterRecords.length} not due for ${FOLLOWUP_HORIZON_DAYS}+ days`
+        : `+${laterRecords.length} more not due for ${FOLLOWUP_HORIZON_DAYS}+ days — Show`;
+    }
+  }
 
   if (records.length === 0) {
     tableEl.closest(".table-scroll").style.display = "none";
     emptyEl.style.display = "block";
+    if (emptyTextEl) {
+      emptyTextEl.textContent =
+        allRecords.length === 0
+          ? "No follow-ups yet."
+          : `All caught up — ${laterRecords.length} follow-up(s) not due for ${FOLLOWUP_HORIZON_DAYS}+ days.`;
+    }
     return;
   }
   tableEl.closest(".table-scroll").style.display = "block";
@@ -396,6 +438,7 @@ async function renderFollowup() {
         <td><select data-field="classification" class="classification-select">${classificationOptionsHtml(r.classification)}</select></td>
         <td><select data-field="type" class="type-select">${typeOptionsHtml(r.classification, r.type)}</select></td>
         <td><input type="date" data-field="date" value="${escapeAttr(r.date)}"></td>
+        <td><input type="date" data-field="nextActionDate" value="${escapeAttr(r.nextActionDate)}"></td>
         <td><input type="text" data-field="caseManager" value="${escapeAttr(r.caseManager)}"></td>
         <td class="actions">
           <button class="save-btn btn-primary" data-id="${r.id}">${ICONS.check}Save</button>
@@ -409,6 +452,7 @@ async function renderFollowup() {
         <td><span class="badge">${escapeHtml(r.classification)}</span></td>
         <td><span class="type-text">${escapeHtml(r.type)}</span></td>
         <td>${escapeHtml(r.date)}</td>
+        <td>${escapeHtml(r.nextActionDate)}</td>
         <td>${escapeHtml(r.caseManager)}</td>
         <td class="actions">
           <button class="complete-btn" data-id="${r.id}">${ICONS.check}Move to Completed</button>
@@ -656,6 +700,15 @@ async function deleteWithUndo(id) {
   });
 }
 
+function wireFollowupLaterToggle() {
+  const laterToggle = document.getElementById("followup-later-toggle");
+  if (!laterToggle) return;
+  laterToggle.addEventListener("click", async () => {
+    showAllFollowups = !showAllFollowups;
+    await renderFollowup();
+  });
+}
+
 function wireFollowupTable() {
   const tableEl = document.getElementById("followup-table");
   if (!tableEl) return;
@@ -829,6 +882,7 @@ function wireAddForm() {
       classification: data.get("classification").trim(),
       type: data.get("type").trim(),
       date: data.get("date"),
+      nextActionDate: data.get("nextActionDate"),
       caseManager: data.get("caseManager").trim(),
       sourceSnippet: data.get("sourceSnippet").trim(),
       notes: data.get("notes").trim(),
@@ -1041,6 +1095,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
   wireFollowupTable();
   wireCompletedTable();
+  wireFollowupLaterToggle();
   renderAll();
   wireAddForm();
   wireDragAndDrop();
