@@ -2,7 +2,7 @@
 *Source of truth: [brief.md](./brief.md). This PRD expands the brief into build-level detail; it does not add scope beyond it.*
 
 ## 1. Problem
-Email and the shelter's HMIS database are separate systems that don't interface with each other, so outcomes reported by email can get missed or forgotten before they make it into HMIS — and catching those requires tracking and reconciling everything by hand.
+Shelter-staff communications (email, shift reports, meeting summaries — from case managers, front-line staff, supervisors, and others) and the shelter's HMIS database are separate systems that don't interface with each other, so outcomes reported in those communications can get missed or forgotten before they make it into HMIS — and catching those requires tracking and reconciling everything by hand.
 
 ## 2. Who Has It, and How Badly
 Chris Cox, at the Adult Emergency Shelter (200+ guests served daily):
@@ -17,8 +17,8 @@ Chris Cox, at the Adult Emergency Shelter (200+ guests served daily):
 
 | Step | Description |
 |---|---|
-| Input | A batch of case-manager emails (like the redacted samples) + `Outcomes.xls`, the file Chris provided that lists every outcome the shelter tracks — used to categorize each extracted outcome by Classification/Type |
-| Extract | Pull outcome mentions from the emails, split into **completed** vs. **in-progress / needs follow-up** — this split already worked in Chris's prompting exercises |
+| Input | A batch of shelter-staff written communications — emails, shift reports, meeting summaries, and similar sources, from case managers, front-line staff, supervisors, and others (like the redacted samples) + `Outcomes.xls`, the file Chris provided that lists every outcome the shelter tracks — used to categorize each extracted outcome by Classification/Type |
+| Extract | Pull outcome mentions from that text, split into **completed** vs. **in-progress / needs follow-up** — this split already worked in Chris's prompting exercises |
 | Write | Add each new outcome into the tracking tool, filed under the right Classification/Type — this replaces the manual copy-into-spreadsheet step Chris currently does by hand |
 | Output | The updated tracking tool, plus a short "here's what I added" summary so Chris is reviewing a change log, not retyping from raw emails |
 
@@ -35,12 +35,12 @@ file is used for one comparison pass and is not saved anywhere.
 - The broader case-manager dashboard (roadmap item 4 — a different, later thing from this V1 tracking tool)
 - **Writing into HMIS itself** — not a "later" item, not on the table at any stage. HMIS is a live case-management system this tool never writes to.
 
-V1 is scoped to one data source (email), one destination (Chris's tracking tool — it fully replaces `Outcomes.xls` as the destination), and one output (an updated record + change log) — buildable and testable in two weeks against real redacted data Chris already has in hand.
+V1 is scoped to one data source (shelter-staff written communications), one destination (Chris's tracking tool — it fully replaces `Outcomes.xls` as the destination), and one output (an updated record + change log) — buildable and testable in two weeks against real redacted data Chris already has in hand.
 
 ## 4. Success Criteria — How I'll Know V1 Worked
-- Run it against a real batch of case-manager emails + Chris's current tracking tool
+- Run it against a real batch of shelter-staff communications (emails, shift reports, meeting summaries) + Chris's current tracking tool
 - Every outcome Chris would've manually copied into a spreadsheet, the tool adds on its own — nothing missed
-- Chris can point to a batch of emails and never have had to manually log them into the tracking tool
+- Chris can point to a batch of shelter-staff communications and never have had to manually log them into the tracking tool
 - **Soft target:** his daily ~1 hour of email-to-spreadsheet copying shrinks because he's reviewing a short "what I added" list instead of retyping from emails
 
 ## 5. Later / Roadmap
