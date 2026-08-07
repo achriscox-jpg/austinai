@@ -1,7 +1,7 @@
 # CLAUDE.md — Standing Instructions for This Repo
 
 ## What this project is
-Chris Cox is building a tool that reads a batch of case-manager emails, extracts the outcomes mentioned in them (completed vs. in-progress/needs follow-up), and writes new ones into his outcomes tracking spreadsheet (`Outcomes.xls`) — replacing the manual copy/note step he currently does by hand.
+Chris Cox is building a tool that reads a batch of shelter-staff written communications — emails, shift reports, meeting summaries, and similar sources, from case managers, front-line staff, supervisors, and others — extracts the outcomes mentioned in them (completed vs. in-progress/needs follow-up), and writes new ones into his outcomes tracking spreadsheet (`Outcomes.xls`) — replacing the manual copy/note step he currently does by hand.
 
 **Source of truth, in this order:** [`brief.md`](./brief.md) → [`PRD.md`](./PRD.md) → this file. If anything here or in the PRD conflicts with `brief.md`, `brief.md` wins — ask before resolving it any other way.
 
