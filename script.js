@@ -279,6 +279,7 @@ function mapFromDb(row) {
     notes: row.notes || "",
     possibleMatch: !!row.possible_match,
     nextActionDate: row.next_action_date || "",
+    createdAt: row.created_at || "",
   };
 }
 
@@ -374,15 +375,17 @@ function isDueSoon(record) {
 // Resets to false (hide later items) on every page load.
 let showAllFollowups = false;
 
-// Set by each table's "Sort by" dropdown -- "" means leave records in the
-// order fetched (oldest added first, per fetchRecordsByStatus). Resets on
-// every page load, same as showAllFollowups above.
-let followupSortValue = "";
-let completedSortValue = "";
+// Set by each table's "Sort by" dropdown. Defaults to oldest-added-first,
+// matching fetchRecordsByStatus's own order, so the default option doesn't
+// change what's on screen. Resets on every page load, same as
+// showAllFollowups above.
+let followupSortValue = "added_asc";
+let completedSortValue = "added_asc";
 
 // Maps a dropdown value's field portion (the part before the last "_") to
 // the record field it sorts on.
 const SORT_FIELDS = {
+  added: "createdAt",
   date: "date",
   id: "guestId",
   name: "guest",
