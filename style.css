@@ -225,8 +225,9 @@ tbody tr.dragging {
   border: none;
   padding: 0;
   margin-left: auto;
-  color: var(--muted);
+  color: var(--brand-red);
   font-size: 12px;
+  font-weight: 700;
   text-decoration: underline;
   cursor: pointer;
 }
