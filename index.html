@@ -32,6 +32,18 @@
       <h2>Completed</h2>
       <span class="count-badge" id="completed-count">0</span>
       <span class="hint">check off once documented in HMIS; it then drops off this list</span>
+      <label class="sort-control">
+        Sort by
+        <select id="completed-sort">
+          <option value="">Order added</option>
+          <option value="date_desc">Date (newest first)</option>
+          <option value="date_asc">Date (oldest first)</option>
+          <option value="id_asc">Guest ID (A–Z)</option>
+          <option value="id_desc">Guest ID (Z–A)</option>
+          <option value="name_asc">Guest Name (A–Z)</option>
+          <option value="name_desc">Guest Name (Z–A)</option>
+        </select>
+      </label>
     </div>
     <div class="table-scroll">
       <table id="completed-table">
@@ -61,6 +73,20 @@
     <div class="card-header">
       <h2>Needs Follow-up</h2>
       <span class="count-badge" id="followup-count">0</span>
+      <label class="sort-control">
+        Sort by
+        <select id="followup-sort">
+          <option value="">Order added</option>
+          <option value="followup_asc">Follow-up Due (soonest first)</option>
+          <option value="followup_desc">Follow-up Due (latest first)</option>
+          <option value="date_desc">Date identified (newest first)</option>
+          <option value="date_asc">Date identified (oldest first)</option>
+          <option value="id_asc">Guest ID (A–Z)</option>
+          <option value="id_desc">Guest ID (Z–A)</option>
+          <option value="name_asc">Guest Name (A–Z)</option>
+          <option value="name_desc">Guest Name (Z–A)</option>
+        </select>
+      </label>
       <button type="button" id="followup-later-toggle" class="later-toggle" style="display: none"></button>
     </div>
     <div class="table-scroll">

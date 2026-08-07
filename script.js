@@ -374,6 +374,49 @@ function isDueSoon(record) {
 // Resets to false (hide later items) on every page load.
 let showAllFollowups = false;
 
+// Set by each table's "Sort by" dropdown -- "" means leave records in the
+// order fetched (oldest added first, per fetchRecordsByStatus). Resets on
+// every page load, same as showAllFollowups above.
+let followupSortValue = "";
+let completedSortValue = "";
+
+// Maps a dropdown value's field portion (the part before the last "_") to
+// the record field it sorts on.
+const SORT_FIELDS = {
+  date: "date",
+  id: "guestId",
+  name: "guest",
+  followup: "nextActionDate",
+};
+
+// Missing values (empty string / null) sort first -- for dates that reads
+// as "least specified first"; for Follow-up Due it also matches isDueSoon's
+// treatment of no date set as already due. Otherwise a plain string compare
+// works: ISO dates ("YYYY-MM-DD") sort correctly as strings, and Guest IDs
+// get numeric-aware comparison so "9" sorts before "10".
+function compareValues(a, b) {
+  const aEmpty = a === "" || a == null;
+  const bEmpty = b === "" || b == null;
+  if (aEmpty && bEmpty) return 0;
+  if (aEmpty) return -1;
+  if (bEmpty) return 1;
+  return String(a).localeCompare(String(b), undefined, { numeric: true, sensitivity: "base" });
+}
+
+// sortValue is a dropdown value like "date_desc" or "id_asc" -- the field
+// name never itself contains an underscore, so splitting on the last one
+// separates it from the asc/desc suffix cleanly.
+function sortRecords(records, sortValue) {
+  if (!sortValue) return records;
+  const separatorIndex = sortValue.lastIndexOf("_");
+  const fieldKey = sortValue.slice(0, separatorIndex);
+  const direction = sortValue.slice(separatorIndex + 1);
+  const field = SORT_FIELDS[fieldKey];
+  if (!field) return records;
+  const sorted = [...records].sort((a, b) => compareValues(a[field], b[field]));
+  return direction === "desc" ? sorted.reverse() : sorted;
+}
+
 // Builds the <td> for a full-width detail row (Source Email / Notes) that
 // runs beneath a record's main row. Read-only shows a scrollable snippet
 // like the old table cell did; editing mode swaps in a full-width textarea.
@@ -432,7 +475,7 @@ async function renderFollowup() {
   ]);
   const duplicateIds = computeDuplicateIds([...allRecords, ...completedRecords]);
   const laterRecords = allRecords.filter((r) => !isDueSoon(r));
-  const records = showAllFollowups ? allRecords : allRecords.filter(isDueSoon);
+  const records = sortRecords(showAllFollowups ? allRecords : allRecords.filter(isDueSoon), followupSortValue);
   const tbody = tableEl.querySelector("tbody");
   const emptyEl = document.getElementById("followup-empty");
   const emptyTextEl = document.getElementById("followup-empty-text");
@@ -532,11 +575,12 @@ async function renderFollowup() {
 async function renderCompleted() {
   const tableEl = document.getElementById("completed-table");
   if (!tableEl) return;
-  const [records, followupRecords] = await Promise.all([
+  const [fetchedRecords, followupRecords] = await Promise.all([
     fetchRecordsByStatus(STATUS.completed),
     fetchRecordsByStatus(STATUS.followup),
   ]);
-  const duplicateIds = computeDuplicateIds([...records, ...followupRecords]);
+  const duplicateIds = computeDuplicateIds([...fetchedRecords, ...followupRecords]);
+  const records = sortRecords(fetchedRecords, completedSortValue);
   const tbody = tableEl.querySelector("tbody");
   const emptyEl = document.getElementById("completed-empty");
   const countEl = document.getElementById("completed-count");
@@ -756,6 +800,24 @@ function wireFollowupLaterToggle() {
     showAllFollowups = !showAllFollowups;
     await renderFollowup();
   });
+}
+
+function wireSortControls() {
+  const followupSort = document.getElementById("followup-sort");
+  if (followupSort) {
+    followupSort.addEventListener("change", async () => {
+      followupSortValue = followupSort.value;
+      await renderFollowup();
+    });
+  }
+
+  const completedSort = document.getElementById("completed-sort");
+  if (completedSort) {
+    completedSort.addEventListener("change", async () => {
+      completedSortValue = completedSort.value;
+      await renderCompleted();
+    });
+  }
 }
 
 function wireFollowupTable() {
@@ -1145,6 +1207,7 @@ document.addEventListener("DOMContentLoaded", () => {
   wireFollowupTable();
   wireCompletedTable();
   wireFollowupLaterToggle();
+  wireSortControls();
   renderAll();
   wireAddForm();
   wireDragAndDrop();
