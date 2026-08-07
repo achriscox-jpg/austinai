@@ -16,6 +16,8 @@
   --row-hover-red: #f1b1a5;   /* distinct from --danger-bg, used for zebra */
   --review: #0f6a63;          /* possible-match flag from reconciliation -- calm teal, not a warning color */
   --review-bg: #e3f4f2;
+  --dup: #92720c;             /* possible-duplicate flag -- amber, distinct from review teal and danger red */
+  --dup-bg: #fbf1d6;
   --shadow: 0 1px 2px rgba(20, 20, 20, 0.05), 0 1px 8px rgba(20, 20, 20, 0.04);
 }
 
@@ -38,6 +40,8 @@
     --row-hover-red: #321b18;
     --review: #5cc9bd;
     --review-bg: #163330;
+    --dup: #e3c675;
+    --dup-bg: #3a2f10;
     --shadow: 0 1px 2px rgba(0, 0, 0, 0.3), 0 1px 10px rgba(0, 0, 0, 0.25);
   }
 }
@@ -481,6 +485,24 @@ td.flag-cell {
   text-align: center;
   padding-left: 6px;
   padding-right: 6px;
+}
+
+td.flag-cell:has(> :nth-child(2)) {
+  display: flex;
+  gap: 4px;
+}
+
+/* Possible-duplicate indicator: same Guest ID/Classification/Type already
+   logged elsewhere in the tool. Purely informational (recomputed live from
+   current data on every render) -- not a button, nothing to dismiss. */
+.duplicate-flag {
+  display: inline-flex;
+  align-items: center;
+  padding: 3px 7px;
+  border: 1px solid var(--dup);
+  border-radius: 5px;
+  background: var(--dup-bg);
+  color: var(--dup);
 }
 
 :is(button, a, input, textarea, select):focus-visible {
