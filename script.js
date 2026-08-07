@@ -227,10 +227,24 @@ function typeOptionsHtml(classification, selected) {
 
 // Leftmost column in both tables -- shows a dismissible "worth a look"
 // badge when a reconciliation upload has flagged this record as a
-// possible match (see runReconcileComparison).
-function flagCellHtml(r) {
-  if (!r.possibleMatch) return `<td class="flag-cell"></td>`;
-  return `<td class="flag-cell"><button class="flag-btn" data-id="${r.id}" title="Possible match found in a reconciliation report — click to dismiss">${ICONS.magnifier}</button></td>`;
+// possible match (see runReconcileComparison), and/or a possible-duplicate
+// indicator when another record in the tool shares the same Guest ID,
+// Classification, and Type (see computeDuplicateIds). Neither one moves,
+// merges, or deletes anything on its own -- both are just a heads-up.
+function flagCellHtml(r, isDuplicate) {
+  const parts = [];
+  if (r.possibleMatch) {
+    parts.push(
+      `<button class="flag-btn" data-id="${r.id}" title="Possible match found in a reconciliation report — click to dismiss">${ICONS.magnifier}</button>`
+    );
+  }
+  if (isDuplicate) {
+    parts.push(
+      `<span class="duplicate-flag" title="Same Guest ID, Classification, and Type already logged elsewhere in the tool — worth checking for a duplicate">${ICONS.duplicate}</span>`
+    );
+  }
+  if (parts.length === 0) return `<td class="flag-cell"></td>`;
+  return `<td class="flag-cell">${parts.join("")}</td>`;
 }
 
 // Small inline icons for buttons -- stroke="currentColor" so each one
@@ -243,6 +257,7 @@ const ICONS = {
   x: `<svg width="14" height="14" viewBox="0 0 16 16" aria-hidden="true"><path d="M3.5 3.5l9 9M12.5 3.5l-9 9" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>`,
   plus: `<svg width="14" height="14" viewBox="0 0 16 16" aria-hidden="true"><path d="M8 3v10M3 8h10" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>`,
   magnifier: `<svg width="14" height="14" viewBox="0 0 16 16" aria-hidden="true"><circle cx="6.5" cy="6.5" r="4" fill="none" stroke="currentColor" stroke-width="1.6"/><line x1="9.5" y1="9.5" x2="13.5" y2="13.5" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg>`,
+  duplicate: `<svg width="14" height="14" viewBox="0 0 16 16" aria-hidden="true"><rect x="5.5" y="5.5" width="8" height="8" rx="1.3" fill="none" stroke="currentColor" stroke-width="1.4"/><path d="M3.3 10V3.8a.5.5 0 01.5-.5H10" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/></svg>`,
 };
 
 // ---------- Supabase data layer ----------
@@ -384,10 +399,38 @@ function flashRow(tr, colorVar) {
   });
 }
 
+// Flags records that share a Guest ID + Classification + Type with another
+// record already sitting in either table -- most often the same outcome
+// logged twice from separate email batches (e.g. a "still working on it"
+// email logged to Needs Follow-up, then a later "done" email logged fresh
+// to Completed instead of the first one moving). Purely a heads-up, like
+// the reconciliation flag -- nothing merges or gets deleted automatically.
+// Records missing any of the three fields are skipped so blank fields
+// don't false-match each other.
+function computeDuplicateIds(records) {
+  const countsByKey = new Map();
+  records.forEach((r) => {
+    if (!r.guestId || !r.classification || !r.type) return;
+    const key = outcomeMatchKey(r.guestId, r.classification, r.type);
+    countsByKey.set(key, (countsByKey.get(key) || 0) + 1);
+  });
+  const duplicateIds = new Set();
+  records.forEach((r) => {
+    if (!r.guestId || !r.classification || !r.type) return;
+    const key = outcomeMatchKey(r.guestId, r.classification, r.type);
+    if (countsByKey.get(key) > 1) duplicateIds.add(String(r.id));
+  });
+  return duplicateIds;
+}
+
 async function renderFollowup() {
   const tableEl = document.getElementById("followup-table");
   if (!tableEl) return;
-  const allRecords = await fetchRecordsByStatus(STATUS.followup);
+  const [allRecords, completedRecords] = await Promise.all([
+    fetchRecordsByStatus(STATUS.followup),
+    fetchRecordsByStatus(STATUS.completed),
+  ]);
+  const duplicateIds = computeDuplicateIds([...allRecords, ...completedRecords]);
   const laterRecords = allRecords.filter((r) => !isDueSoon(r));
   const records = showAllFollowups ? allRecords : allRecords.filter(isDueSoon);
   const tbody = tableEl.querySelector("tbody");
@@ -426,13 +469,14 @@ async function renderFollowup() {
   records.forEach((r, i) => {
     const groupClass = i % 2 === 0 ? "row-group-odd" : "row-group-even";
     const editing = editingFollowupId === String(r.id);
+    const flagHtml = flagCellHtml(r, duplicateIds.has(String(r.id)));
 
     const tr = document.createElement("tr");
     tr.className = groupClass;
     tr.dataset.recordId = r.id;
     if (editing) {
       tr.innerHTML = `
-        ${flagCellHtml(r)}
+        ${flagHtml}
         <td><input type="text" data-field="guestId" value="${escapeAttr(r.guestId)}"></td>
         <td><input type="text" data-field="guest" value="${escapeAttr(r.guest)}"></td>
         <td><select data-field="classification" class="classification-select">${classificationOptionsHtml(r.classification)}</select></td>
@@ -446,7 +490,7 @@ async function renderFollowup() {
         </td>`;
     } else {
       tr.innerHTML = `
-        ${flagCellHtml(r)}
+        ${flagHtml}
         <td><span class="id-tag">${escapeHtml(r.guestId)}</span></td>
         <td>${escapeHtml(r.guest)}</td>
         <td><span class="badge">${escapeHtml(r.classification)}</span></td>
@@ -488,7 +532,11 @@ async function renderFollowup() {
 async function renderCompleted() {
   const tableEl = document.getElementById("completed-table");
   if (!tableEl) return;
-  const records = await fetchRecordsByStatus(STATUS.completed);
+  const [records, followupRecords] = await Promise.all([
+    fetchRecordsByStatus(STATUS.completed),
+    fetchRecordsByStatus(STATUS.followup),
+  ]);
+  const duplicateIds = computeDuplicateIds([...records, ...followupRecords]);
   const tbody = tableEl.querySelector("tbody");
   const emptyEl = document.getElementById("completed-empty");
   const countEl = document.getElementById("completed-count");
@@ -506,13 +554,14 @@ async function renderCompleted() {
   records.forEach((r, i) => {
     const groupClass = i % 2 === 0 ? "row-group-odd" : "row-group-even";
     const editing = editingCompletedId === String(r.id);
+    const flagHtml = flagCellHtml(r, duplicateIds.has(String(r.id)));
 
     const tr = document.createElement("tr");
     tr.className = groupClass;
     tr.dataset.recordId = r.id;
     if (editing) {
       tr.innerHTML = `
-        ${flagCellHtml(r)}
+        ${flagHtml}
         <td><input type="text" data-field="guestId" value="${escapeAttr(r.guestId)}"></td>
         <td><input type="text" data-field="guest" value="${escapeAttr(r.guest)}"></td>
         <td><select data-field="classification" class="classification-select">${classificationOptionsHtml(r.classification)}</select></td>
@@ -526,7 +575,7 @@ async function renderCompleted() {
         </td>`;
     } else {
       tr.innerHTML = `
-        ${flagCellHtml(r)}
+        ${flagHtml}
         <td><span class="id-tag">${escapeHtml(r.guestId)}</span></td>
         <td>${escapeHtml(r.guest)}</td>
         <td><span class="badge">${escapeHtml(r.classification)}</span></td>
@@ -958,7 +1007,7 @@ function findColumnIndex(headers, candidates) {
   return -1;
 }
 
-function reconcileMatchKey(guestId, classification, type) {
+function outcomeMatchKey(guestId, classification, type) {
   return [guestId, classification, type].map((v) => String(v ?? "").trim().toLowerCase()).join("|");
 }
 
@@ -1023,7 +1072,7 @@ async function runReconcileComparison(csvText, messageEl, resultsSection, result
   const reportKeys = new Set();
   for (let i = 1; i < rows.length; i++) {
     const r = rows[i];
-    reportKeys.add(reconcileMatchKey(r[guestIdIdx], r[classificationIdx], r[typeIdx]));
+    reportKeys.add(outcomeMatchKey(r[guestIdIdx], r[classificationIdx], r[typeIdx]));
   }
 
   const [followups, completedRecords] = await Promise.all([
@@ -1038,7 +1087,7 @@ async function runReconcileComparison(csvText, messageEl, resultsSection, result
   const unmatchedIds = [];
   const matches = [];
   all.forEach((r) => {
-    if (reportKeys.has(reconcileMatchKey(r.guestId, r.classification, r.type))) {
+    if (reportKeys.has(outcomeMatchKey(r.guestId, r.classification, r.type))) {
       matchedIds.push(r.id);
       matches.push({ ...r, sourceTable: r.status === STATUS.completed ? "Completed" : "Needs Follow-up" });
     } else {
