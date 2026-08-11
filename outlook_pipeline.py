@@ -124,7 +124,9 @@ def fetch_recent_messages(
     messages = []
     for msg in raw_messages:
         body = msg.get("body") or {}
-        sender = (msg.get("from") or {}).get("emailAddress", {}).get("address", "")
+        from_address = (msg.get("from") or {}).get("emailAddress", {})
+        sender = from_address.get("address", "")
+        sender_name = from_address.get("name", "")
         messages.append(
             {
                 # Graph's own id - handy for a future OUTLOOK_GET_MESSAGE
@@ -139,6 +141,10 @@ def fetch_recent_messages(
                 "subject": msg.get("subject", ""),
                 "received_at": msg.get("receivedDateTime", ""),
                 "sender": sender,
+                # Display name, e.g. "Chris Cox" - used as the case_manager
+                # fallback when the text doesn't name one. Falls back to the
+                # bare address if Graph didn't supply a display name.
+                "sender_name": sender_name or sender,
                 "body_text": _html_to_text(body.get("content", ""), body.get("contentType", "text")),
             }
         )

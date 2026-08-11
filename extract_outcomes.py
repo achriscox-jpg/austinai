@@ -29,9 +29,13 @@ One email can produce zero, one, or many outcome records. Each record:
                         called "classification" - that name is reserved for
                         the Outcomes.xls category above.
     date_identified    - the date this was mentioned/identified, as written in
-                        the text. Blank if no date is given.
+                        the text. Blank from the model if no date is given in
+                        the text itself - process_email() then fills it in
+                        from the email's own sent date, if one was passed in.
     case_manager      - name of the case manager/staff member associated with
-                        this outcome, if stated. Blank if not stated.
+                        this outcome, if stated. Blank from the model if not
+                        stated - process_email() then fills it in from the
+                        email's sender, if one was passed in.
     supporting_text    - the exact phrase(s) from the email that justify this
                         record. Always required, especially important when
                         classification and/or type are blank, so a human
@@ -467,12 +471,14 @@ def process_email(
     system_prompt: str,
     email_text: str,
     source_id: str,
+    sent_date: str = "",
+    case_manager_fallback: str = "",
 ) -> dict:
     """Run extraction + verification for one email's text and return a
     single result record. This is the shared core: `main()` below calls it
-    once per local .txt file, and a future live-mailbox pipeline (Composio,
-    Microsoft Graph, etc.) can call it once per fetched message instead -
-    neither caller needs to know how the other sources its email text.
+    once per local .txt file, and the live pipeline (run_pipeline.py) calls
+    it once per fetched Outlook message instead - neither caller needs to
+    know how the other sources its email text.
 
     `source_id` is a bookkeeping tag for which file/message this came from
     (a filename here; a Graph message id in the live pipeline) - deliberately
@@ -482,6 +488,14 @@ def process_email(
     when writing to Supabase), not an identifier. Keeping the names distinct
     here avoids that mix-up down the line.
 
+    `sent_date` (YYYY-MM-DD) and `case_manager_fallback` are optional,
+    known-good values from the email's own metadata (received date, sender)
+    - not something the model has to find in the text. Any outcome whose
+    date_identified or case_manager comes back blank gets filled in from
+    these, deterministically, AFTER verification runs - not before, so the
+    verifier is checking what the model actually found in the text, not a
+    fallback value it never saw and shouldn't be asked to confirm.
+
     Returns {"source_id", "outcomes", "verification"}. Never raises for
     "no outcomes found" - that's a normal, valid result.
     """
@@ -490,6 +504,13 @@ def process_email(
         outcome["source_id"] = source_id  # filled here, not guessed by the model
 
     verification = verify_outcomes(client, email_text, outcomes)
+
+    if sent_date or case_manager_fallback:
+        for outcome in outcomes:
+            if not outcome.get("date_identified") and sent_date:
+                outcome["date_identified"] = sent_date
+            if not outcome.get("case_manager") and case_manager_fallback:
+                outcome["case_manager"] = case_manager_fallback
 
     return {
         "source_id": source_id,

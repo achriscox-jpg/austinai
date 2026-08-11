@@ -51,8 +51,18 @@ def run(lookback_days: int = op.DEFAULT_LOOKBACK_DAYS, dry_run: bool = False) ->
     total_flagged = 0
 
     for msg in new_messages:
+        # received_at is a full ISO 8601 timestamp (e.g.
+        # "2026-08-11T02:31:03Z") - the date_identified fallback just wants
+        # the date portion, which is always the first 10 characters of that
+        # format.
         result = ex.process_email(
-            client, schema, system_prompt, msg["body_text"], msg["internet_message_id"]
+            client,
+            schema,
+            system_prompt,
+            msg["body_text"],
+            msg["internet_message_id"],
+            sent_date=msg["received_at"][:10],
+            case_manager_fallback=msg["sender_name"],
         )
         outcomes = result["outcomes"]
         verification = result["verification"]
