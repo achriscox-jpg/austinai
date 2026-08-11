@@ -13,8 +13,9 @@ docstring only summarizes the shape of the output. Read extraction-rules.md
 before changing the rules below; keep the two in sync.
 
 One email can produce zero, one, or many outcome records. Each record:
-    guest_id         - identifier for the guest (name, initials, or ID as
-                        given in the text). Blank if not identifiable.
+    guest_id         - the guest's ID number, exactly as given in the text.
+                        Blank if no ID number is stated - do NOT substitute
+                        the guest's name or initials here.
     guest_name        - the guest's name, exactly as it appears in the text.
                         Blank if not stated. Separate from guest_id because
                         the text may give one without the other.
@@ -121,10 +122,11 @@ def build_schema(classifications: list[str], types: list[str]) -> dict:
                         "guest_id": {
                             "type": "string",
                             "description": (
-                                "Identifier for the guest this outcome is "
-                                "about, exactly as it appears in the text "
-                                "(name, initials, or ID number). Empty "
-                                "string if no guest is identifiable."
+                                "The guest's ID number, exactly as it "
+                                "appears in the text. Empty string if no ID "
+                                "number is stated - do NOT use the guest's "
+                                "name or initials as a substitute here; "
+                                "that belongs in guest_name instead."
                             ),
                         },
                         "guest_name": {
