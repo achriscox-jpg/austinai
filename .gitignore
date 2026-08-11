@@ -1,0 +1,11 @@
+# Secrets — never commit
+.env
+
+# Real (non-redacted) guest data — see CLAUDE.md "Data handling"
+emails/
+Outcomes.xls
+extraction-rules.md
+
+# Python build artifacts
+__pycache__/
+*.pyc

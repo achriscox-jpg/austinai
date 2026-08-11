@@ -1,0 +1,13 @@
+# Runtime dependencies for the automated pipeline (outlook_pipeline.py,
+# extract_outcomes.py, supabase_writer.py, run_pipeline.py) - what
+# GitHub Actions installs to run this on a schedule.
+#
+# generate_taxonomy.py is a separate, local-only, occasional script (reads
+# the real Outcomes.xls, which never leaves your machine) - it needs
+# pandas + xlrd too, but those aren't listed here since CI never runs it.
+# Install them yourself locally if you need to regenerate taxonomy.json:
+#   pip install pandas xlrd
+
+anthropic==0.120.2
+composio==0.18.2
+httpx==0.28.1

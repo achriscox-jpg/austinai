@@ -1,0 +1,29 @@
+name: Outcomes pipeline
+
+on:
+  schedule:
+    # Once a day, 11:00 UTC (~6am Central during CDT / ~5am during CST).
+    # Adjust the cron expression if a different time works better.
+    - cron: "0 11 * * *"
+  workflow_dispatch: {} # lets you trigger a run manually from the Actions tab, for testing
+
+jobs:
+  run-pipeline:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - run: pip install -r requirements.txt
+
+      - run: python run_pipeline.py
+        env:
+          COMPOSIO_API_KEY: ${{ secrets.COMPOSIO_API_KEY }}
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+          OUTLOOK_CONNECTED_ACCOUNT_ID: ${{ secrets.OUTLOOK_CONNECTED_ACCOUNT_ID }}
+          OUTLOOK_COMPOSIO_USER_ID: ${{ secrets.OUTLOOK_COMPOSIO_USER_ID }}
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_KEY: ${{ secrets.SUPABASE_KEY }}
