@@ -375,12 +375,13 @@ function isDueSoon(record) {
 // Resets to false (hide later items) on every page load.
 let showAllFollowups = false;
 
-// Set by each table's "Sort by" dropdown. Defaults to oldest-added-first,
-// matching fetchRecordsByStatus's own order, so the default option doesn't
-// change what's on screen. Resets on every page load, same as
+// Set by each table's "Sort by" dropdown. Defaults to newest-added-first
+// (Chris's preference) - sortRecords() re-sorts client-side regardless of
+// what order fetchRecordsByStatus's own query returns, so this doesn't need
+// to match that query's order. Resets on every page load, same as
 // showAllFollowups above.
-let followupSortValue = "added_asc";
-let completedSortValue = "added_asc";
+let followupSortValue = "added_desc";
+let completedSortValue = "added_desc";
 
 // Maps a dropdown value's field portion (the part before the last "_") to
 // the record field it sorts on.
