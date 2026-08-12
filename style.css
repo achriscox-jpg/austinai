@@ -410,7 +410,6 @@ td.actions button {
 .id-tag {
   font-family: ui-monospace, SFMono-Regular, Consolas, monospace;
   font-size: 15px;
-  font-weight: 600;
   color: var(--text);
 }
 
