@@ -452,19 +452,20 @@ function flashRow(tr, colorVar) {
 // email logged to Needs Follow-up, then a later "done" email logged fresh
 // to Completed instead of the first one moving). Purely a heads-up, like
 // the reconciliation flag -- nothing merges or gets deleted automatically.
-// Records missing any of the three fields are skipped so blank fields
-// don't false-match each other.
+// Records missing an identifier (both Guest ID and Guest Name blank) or
+// missing Classification/Type are skipped so blank fields don't false-match
+// each other.
 function computeDuplicateIds(records) {
   const countsByKey = new Map();
   records.forEach((r) => {
-    if (!r.guestId || !r.classification || !r.type) return;
-    const key = outcomeMatchKey(r.guestId, r.classification, r.type);
+    if ((!r.guestId && !r.guest) || !r.classification || !r.type) return;
+    const key = outcomeMatchKey(r.guestId, r.guest, r.classification, r.type);
     countsByKey.set(key, (countsByKey.get(key) || 0) + 1);
   });
   const duplicateIds = new Set();
   records.forEach((r) => {
-    if (!r.guestId || !r.classification || !r.type) return;
-    const key = outcomeMatchKey(r.guestId, r.classification, r.type);
+    if ((!r.guestId && !r.guest) || !r.classification || !r.type) return;
+    const key = outcomeMatchKey(r.guestId, r.guest, r.classification, r.type);
     if (countsByKey.get(key) > 1) duplicateIds.add(String(r.id));
   });
   return duplicateIds;
@@ -1073,8 +1074,19 @@ function findColumnIndex(headers, candidates) {
   return -1;
 }
 
-function outcomeMatchKey(guestId, classification, type) {
-  return [guestId, classification, type].map((v) => String(v ?? "").trim().toLowerCase()).join("|");
+// Guest ID is often blank (many source emails only give a name, no ID
+// number - see extraction-rules.md 1a), so an ID-only match key would miss
+// most real duplicates. Fall back to guest name only when ID is blank,
+// rather than treating them as two independent signals, so a record with
+// an ID always matches on that ID and never accidentally collides with a
+// same-named different guest who happens to lack one.
+function outcomeMatchKey(guestId, guestName, classification, type) {
+  const id = String(guestId ?? "").trim().toLowerCase();
+  const name = String(guestName ?? "").trim().toLowerCase();
+  const identifier = id ? `id:${id}` : name ? `name:${name}` : "";
+  const cls = String(classification ?? "").trim().toLowerCase();
+  const typ = String(type ?? "").trim().toLowerCase();
+  return [identifier, cls, typ].join("|");
 }
 
 function wireReconcileForm() {
@@ -1126,19 +1138,32 @@ async function runReconcileComparison(csvText, messageEl, resultsSection, result
 
   const headers = rows[0];
   const guestIdIdx = findColumnIndex(headers, ["guestid", "id"]);
+  const guestNameIdx = findColumnIndex(headers, ["guestname", "name", "guest"]);
   const classificationIdx = findColumnIndex(headers, ["classification"]);
   const typeIdx = findColumnIndex(headers, ["type"]);
 
-  if (guestIdIdx === -1 || classificationIdx === -1 || typeIdx === -1) {
+  if (classificationIdx === -1 || typeIdx === -1) {
     messageEl.textContent =
-      "Couldn't find Guest ID / Classification / Type columns — check the header row matches those names.";
+      "Couldn't find Classification / Type columns — check the header row matches those names.";
+    return;
+  }
+  if (guestIdIdx === -1 && guestNameIdx === -1) {
+    messageEl.textContent =
+      "Couldn't find a Guest ID or Guest Name column — check the header row includes at least one.";
     return;
   }
 
+  // Guest Name is a fallback identifier, same as outcomeMatchKey() uses for
+  // the app's own records - a row with no ID and no name can't be matched
+  // to anything, so it's skipped rather than colliding with every other
+  // identifier-less row on Classification+Type alone.
   const reportKeys = new Set();
   for (let i = 1; i < rows.length; i++) {
     const r = rows[i];
-    reportKeys.add(outcomeMatchKey(r[guestIdIdx], r[classificationIdx], r[typeIdx]));
+    const guestId = guestIdIdx !== -1 ? r[guestIdIdx] : "";
+    const guestName = guestNameIdx !== -1 ? r[guestNameIdx] : "";
+    if (!guestId.trim() && !guestName.trim()) continue;
+    reportKeys.add(outcomeMatchKey(guestId, guestName, r[classificationIdx], r[typeIdx]));
   }
 
   const [followups, completedRecords] = await Promise.all([
@@ -1153,7 +1178,7 @@ async function runReconcileComparison(csvText, messageEl, resultsSection, result
   const unmatchedIds = [];
   const matches = [];
   all.forEach((r) => {
-    if (reportKeys.has(outcomeMatchKey(r.guestId, r.classification, r.type))) {
+    if (reportKeys.has(outcomeMatchKey(r.guestId, r.guest, r.classification, r.type))) {
       matchedIds.push(r.id);
       matches.push({ ...r, sourceTable: r.status === STATUS.completed ? "Completed" : "Needs Follow-up" });
     } else {

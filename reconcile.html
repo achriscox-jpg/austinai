@@ -36,8 +36,10 @@
       it's used once for this comparison and then discarded.
     </p>
     <p class="hint" style="display: block; margin-bottom: 14px;">
-      Expected columns (any order, header names roughly matching): <strong>Guest ID</strong>,
-      <strong>Classification</strong>, <strong>Type</strong>.
+      Expected columns (any order, header names roughly matching): <strong>Classification</strong>
+      and <strong>Type</strong> are required; at least one of <strong>Guest ID</strong> or
+      <strong>Guest Name</strong> is required too (both are fine — ID is used when present,
+      Guest Name only as a fallback for rows with no ID).
     </p>
     <form id="reconcile-form" class="record-form">
       <label>
