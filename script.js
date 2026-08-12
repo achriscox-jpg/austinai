@@ -556,8 +556,6 @@ async function renderFollowup() {
           <button class="edit-btn" data-id="${r.id}">${ICONS.pencil}Edit</button>
           <button class="delete-btn" data-id="${r.id}">${ICONS.trash}Delete</button>
         </td>`;
-      tr.draggable = true;
-      tr.dataset.dragId = r.id;
     }
     tbody.appendChild(tr);
 
@@ -572,6 +570,17 @@ async function renderFollowup() {
     notesTr.dataset.recordId = r.id;
     notesTr.innerHTML = detailCellHtml("Follow-up Notes", "notes", r.notes, editing, FOLLOWUP_COLSPAN);
     tbody.appendChild(notesTr);
+
+    // Grabbing any of the record's three rows (main + Source Email + Notes)
+    // should start the drag, not just the top one - a client record reads
+    // as one unit even though it's three <tr>s. Only when not editing, same
+    // as before.
+    if (!editing) {
+      [tr, sourceTr, notesTr].forEach((rowEl) => {
+        rowEl.draggable = true;
+        rowEl.dataset.dragId = r.id;
+      });
+    }
 
     if (highlightId === String(r.id)) {
       flashRow(tr, "--row-hover-red");
@@ -644,8 +653,6 @@ async function renderCompleted() {
           <button class="edit-btn" data-id="${r.id}">${ICONS.pencil}Edit</button>
           <button class="delete-btn" data-id="${r.id}">${ICONS.trash}Delete</button>
         </td>`;
-      tr.draggable = true;
-      tr.dataset.dragId = r.id;
     }
     tbody.appendChild(tr);
 
@@ -660,6 +667,17 @@ async function renderCompleted() {
     notesTr.dataset.recordId = r.id;
     notesTr.innerHTML = detailCellHtml("Notes", "notes", r.notes, editing, COMPLETED_COLSPAN);
     tbody.appendChild(notesTr);
+
+    // Grabbing any of the record's three rows (main + Source Email + Notes)
+    // should start the drag, not just the top one - a client record reads
+    // as one unit even though it's three <tr>s. Only when not editing, same
+    // as before.
+    if (!editing) {
+      [tr, sourceTr, notesTr].forEach((rowEl) => {
+        rowEl.draggable = true;
+        rowEl.dataset.dragId = r.id;
+      });
+    }
 
     if (highlightId === String(r.id)) {
       flashRow(tr, "--row-hover-blue");
@@ -933,16 +951,20 @@ function wireDragAndDrop() {
       if (!tr) return;
       e.dataTransfer.setData("text/plain", JSON.stringify({ id: tr.dataset.dragId, source }));
       e.dataTransfer.effectAllowed = "move";
-      tr.classList.add("dragging");
+      // Dim the whole client record (main + Source Email + Notes rows), not
+      // just whichever of the three was grabbed - all three share
+      // data-record-id and read as one logical record.
+      tr.parentElement
+        .querySelectorAll(`tr[data-record-id="${tr.dataset.recordId}"]`)
+        .forEach((rowEl) => rowEl.classList.add("dragging"));
     };
   }
 
   followupTbody.addEventListener("dragstart", handleDragStart("followup"));
   completedTbody.addEventListener("dragstart", handleDragStart("completed"));
 
-  document.addEventListener("dragend", (e) => {
-    const tr = e.target.closest && e.target.closest("tr");
-    if (tr) tr.classList.remove("dragging");
+  document.addEventListener("dragend", () => {
+    document.querySelectorAll("tr.dragging").forEach((rowEl) => rowEl.classList.remove("dragging"));
   });
 
   function setupDropZone(sectionEl, expectedSource, onDrop) {
