@@ -5,6 +5,7 @@
 emails/
 Outcomes.xls
 extraction-rules.md
+session-*-summary.md
 
 # Python build artifacts
 __pycache__/

@@ -50,7 +50,17 @@ def run(lookback_days: int = op.DEFAULT_LOOKBACK_DAYS, dry_run: bool = False) ->
     total_written = 0
     total_flagged = 0
 
-    for msg in new_messages:
+    # messages (and therefore new_messages) come back newest-received-first
+    # from op.fetch_recent_messages (orderby receivedDateTime desc). Insert
+    # oldest-to-newest instead - each insert_outcomes() call gets its own
+    # created_at, so processing newest-first would write the newest email's
+    # outcomes with the EARLIEST created_at of the run and the oldest
+    # email's outcomes with the LATEST, inverting the dashboard's
+    # newest-added-first sort within every run that catches up more than
+    # one message at once. See extraction-rules.md's session log for the
+    # observed case (2026-08-12: a case manager's whole batch sorted to the
+    # bottom of same-run results despite being the most recently emailed).
+    for msg in reversed(new_messages):
         # received_at is a full ISO 8601 timestamp (e.g.
         # "2026-08-11T02:31:03Z") - the date_identified fallback just wants
         # the date portion, which is always the first 10 characters of that
