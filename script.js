@@ -446,28 +446,33 @@ function flashRow(tr, colorVar) {
   });
 }
 
-// Flags records that share a Guest ID + Classification + Type with another
-// record already sitting in either table -- most often the same outcome
-// logged twice from separate email batches (e.g. a "still working on it"
-// email logged to Needs Follow-up, then a later "done" email logged fresh
-// to Completed instead of the first one moving). Purely a heads-up, like
-// the reconciliation flag -- nothing merges or gets deleted automatically.
-// Records missing an identifier (both Guest ID and Guest Name blank) or
-// missing Classification/Type are skipped so blank fields don't false-match
-// each other.
+// Flags records that could be the same outcome as another record already
+// sitting in either table (same guest, Classification/Type either matching
+// or blank on one side - see outcomesMightMatch) -- most often the same
+// outcome logged twice from separate email batches (e.g. a "still working
+// on it" email logged to Needs Follow-up, then a later "done" email logged
+// fresh to Completed instead of the first one moving). Purely a heads-up,
+// like the reconciliation flag -- nothing merges or gets deleted
+// automatically. Records missing an identifier (both Guest ID and Guest
+// Name blank) are skipped - nothing to match them on. O(n^2) pairwise
+// comparison, not a hash lookup, because "blank matches anything" isn't
+// expressible as exact key equality; fine at the scale this table runs at.
 function computeDuplicateIds(records) {
-  const countsByKey = new Map();
-  records.forEach((r) => {
-    if ((!r.guestId && !r.guest) || !r.classification || !r.type) return;
-    const key = outcomeMatchKey(r.guestId, r.guest, r.classification, r.type);
-    countsByKey.set(key, (countsByKey.get(key) || 0) + 1);
-  });
+  const withIdentifier = records.filter((r) => guestIdentifier(r.guestId, r.guest));
   const duplicateIds = new Set();
-  records.forEach((r) => {
-    if ((!r.guestId && !r.guest) || !r.classification || !r.type) return;
-    const key = outcomeMatchKey(r.guestId, r.guest, r.classification, r.type);
-    if (countsByKey.get(key) > 1) duplicateIds.add(String(r.id));
-  });
+  for (let i = 0; i < withIdentifier.length; i++) {
+    for (let j = i + 1; j < withIdentifier.length; j++) {
+      const a = withIdentifier[i];
+      const b = withIdentifier[j];
+      if (outcomesMightMatch(
+        { guestId: a.guestId, guestName: a.guest, classification: a.classification, type: a.type },
+        { guestId: b.guestId, guestName: b.guest, classification: b.classification, type: b.type },
+      )) {
+        duplicateIds.add(String(a.id));
+        duplicateIds.add(String(b.id));
+      }
+    }
+  }
   return duplicateIds;
 }
 
@@ -1075,18 +1080,42 @@ function findColumnIndex(headers, candidates) {
 }
 
 // Guest ID is often blank (many source emails only give a name, no ID
-// number - see extraction-rules.md 1a), so an ID-only match key would miss
+// number - see extraction-rules.md 1a), so an ID-only identifier would miss
 // most real duplicates. Fall back to guest name only when ID is blank,
 // rather than treating them as two independent signals, so a record with
 // an ID always matches on that ID and never accidentally collides with a
-// same-named different guest who happens to lack one.
-function outcomeMatchKey(guestId, guestName, classification, type) {
+// same-named different guest who happens to lack one. Returns "" if
+// neither is present - nothing to identify the guest by at all.
+function guestIdentifier(guestId, guestName) {
   const id = String(guestId ?? "").trim().toLowerCase();
+  if (id) return `id:${id}`;
   const name = String(guestName ?? "").trim().toLowerCase();
-  const identifier = id ? `id:${id}` : name ? `name:${name}` : "";
-  const cls = String(classification ?? "").trim().toLowerCase();
-  const typ = String(type ?? "").trim().toLowerCase();
-  return [identifier, cls, typ].join("|");
+  if (name) return `name:${name}`;
+  return "";
+}
+
+// Classification/Type comparison where a blank value on EITHER side is a
+// wildcard, not a mismatch. Our own extraction deliberately leaves
+// Classification and/or Type blank when it isn't confident which exact
+// taxonomy value applies (extraction-rules.md rule 4) - those are exactly
+// the records most worth surfacing for review, so requiring exact equality
+// would mean the most ambiguous outcomes could never be flagged as
+// possible matches.
+function fieldMatchesOrBlank(a, b) {
+  const na = String(a ?? "").trim().toLowerCase();
+  const nb = String(b ?? "").trim().toLowerCase();
+  return !na || !nb || na === nb;
+}
+
+// True if two outcome-shaped records ({guestId, guestName, classification,
+// type}) could plausibly be the same outcome: same guest identifier
+// (required - no identifier on either side never matches), and
+// Classification/Type each either blank on one side or equal on both.
+function outcomesMightMatch(a, b) {
+  const idA = guestIdentifier(a.guestId, a.guestName);
+  const idB = guestIdentifier(b.guestId, b.guestName);
+  if (!idA || idA !== idB) return false;
+  return fieldMatchesOrBlank(a.classification, b.classification) && fieldMatchesOrBlank(a.type, b.type);
 }
 
 function wireReconcileForm() {
@@ -1153,17 +1182,19 @@ async function runReconcileComparison(csvText, messageEl, resultsSection, result
     return;
   }
 
-  // Guest Name is a fallback identifier, same as outcomeMatchKey() uses for
+  // Guest Name is a fallback identifier, same as guestIdentifier() uses for
   // the app's own records - a row with no ID and no name can't be matched
   // to anything, so it's skipped rather than colliding with every other
-  // identifier-less row on Classification+Type alone.
-  const reportKeys = new Set();
+  // identifier-less row on Classification+Type alone. Classification/Type
+  // are kept as given (blank or not) - outcomesMightMatch treats a blank on
+  // either side as a wildcard rather than requiring exact equality.
+  const reportRecords = [];
   for (let i = 1; i < rows.length; i++) {
     const r = rows[i];
     const guestId = guestIdIdx !== -1 ? r[guestIdIdx] : "";
     const guestName = guestNameIdx !== -1 ? r[guestNameIdx] : "";
     if (!guestId.trim() && !guestName.trim()) continue;
-    reportKeys.add(outcomeMatchKey(guestId, guestName, r[classificationIdx], r[typeIdx]));
+    reportRecords.push({ guestId, guestName, classification: r[classificationIdx], type: r[typeIdx] });
   }
 
   const [followups, completedRecords] = await Promise.all([
@@ -1178,7 +1209,8 @@ async function runReconcileComparison(csvText, messageEl, resultsSection, result
   const unmatchedIds = [];
   const matches = [];
   all.forEach((r) => {
-    if (reportKeys.has(outcomeMatchKey(r.guestId, r.guest, r.classification, r.type))) {
+    const rec = { guestId: r.guestId, guestName: r.guest, classification: r.classification, type: r.type };
+    if (reportRecords.some((rep) => outcomesMightMatch(rec, rep))) {
       matchedIds.push(r.id);
       matches.push({ ...r, sourceTable: r.status === STATUS.completed ? "Completed" : "Needs Follow-up" });
     } else {
