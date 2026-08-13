@@ -113,6 +113,21 @@ nav a.active {
   color: var(--accent);
 }
 
+.current-user-btn {
+  margin-left: auto;
+  background: none;
+  border: none;
+  color: var(--muted);
+  font-size: 12px;
+  cursor: pointer;
+  padding: 4px 2px;
+}
+
+.current-user-btn:hover {
+  color: var(--accent);
+  text-decoration: underline;
+}
+
 /* ---------- Layout ---------- */
 
 main {

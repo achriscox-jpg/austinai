@@ -345,6 +345,88 @@ async function deleteRecord(id) {
   return true;
 }
 
+// ---------- current user (no real auth - just remembers a name per browser
+// so the activity log below has a "by" to attach to each entry) ----------
+
+const CURRENT_USER_KEY = "outcomesCurrentUser";
+
+function getCurrentUser() {
+  return localStorage.getItem(CURRENT_USER_KEY) || "";
+}
+
+function promptForCurrentUser() {
+  const name = (prompt("Your name — logged against records you delete or mark as documented in HMIS:", getCurrentUser()) || "").trim();
+  if (name) localStorage.setItem(CURRENT_USER_KEY, name);
+  return getCurrentUser();
+}
+
+function ensureCurrentUser() {
+  return getCurrentUser() || promptForCurrentUser() || "Unknown";
+}
+
+function wireCurrentUserButton() {
+  const btn = document.getElementById("current-user-btn");
+  if (!btn) return;
+  const render = () => {
+    const name = getCurrentUser();
+    btn.textContent = name ? `Logged as ${name}` : "Set your name";
+  };
+  btn.addEventListener("click", () => {
+    promptForCurrentUser();
+    render();
+  });
+  render();
+}
+
+// Snapshots a record into outcomes_log before it's removed from `outcomes`
+// (by either a real delete or "documented in HMIS" - both call
+// deleteRecord). A logging failure is reported but doesn't block the
+// delete itself; losing the log entry is better than blocking the action
+// the user actually asked for.
+async function logOutcomeAction(record, action, reason) {
+  const { data, error } = await supabaseClient
+    .from("outcomes_log")
+    .insert({
+      outcome_id: record.id,
+      action,
+      reason: reason || null,
+      by_name: ensureCurrentUser(),
+      guest_id: record.guestId || null,
+      guest_name: record.guest || null,
+      classification: record.classification || null,
+      type: record.type || null,
+      status: record.status || null,
+      date_identified: record.date || null,
+      case_manager: record.caseManager || null,
+      source_email: record.sourceSnippet || null,
+    })
+    .select()
+    .single();
+  if (error) {
+    console.error("Failed to write outcomes_log entry:", error);
+    return null;
+  }
+  return data.id;
+}
+
+// Removes a just-created log entry when its delete is undone within the
+// undo window - an undone delete never really happened, so it shouldn't
+// stay in an "append-only" log of actions that did.
+async function retractLogEntry(logId) {
+  if (!logId) return;
+  const { error } = await supabaseClient.from("outcomes_log").delete().eq("id", logId);
+  if (error) console.error("Failed to retract outcomes_log entry:", error);
+}
+
+async function fetchRecordById(id) {
+  const { data: row, error } = await supabaseClient.from("outcomes").select("*").eq("id", id).single();
+  if (error || !row) {
+    console.error("Couldn't find that record:", error);
+    return null;
+  }
+  return mapFromDb(row);
+}
+
 // ---------- index.html: the two tables ----------
 
 let editingFollowupId = null;
@@ -785,20 +867,27 @@ function showUndoToast(message, onUndo) {
   };
 }
 
-async function deleteWithUndo(id) {
-  const { data: row, error: fetchError } = await supabaseClient
-    .from("outcomes")
-    .select("*")
-    .eq("id", id)
-    .single();
-  if (fetchError || !row) {
-    console.error("Couldn't find that record to delete:", fetchError);
-    return;
-  }
-  const record = mapFromDb(row);
+// Returns the trimmed reason text, "" if left blank, or null if the user
+// cancelled (in which case the delete itself is aborted - this prompt is
+// the only confirmation step on the delete path, there's no separate
+// confirm() dialog).
+function promptDeleteReason() {
+  const input = prompt("Why is this being deleted? (optional)");
+  if (input === null) return null;
+  return input.trim();
+}
+
+async function deleteWithUndo(id, reason) {
+  const record = await fetchRecordById(id);
+  if (!record) return;
+
+  const logId = await logOutcomeAction(record, "deleted", reason);
 
   const ok = await deleteRecord(id);
-  if (!ok) return;
+  if (!ok) {
+    await retractLogEntry(logId);
+    return;
+  }
   await renderAll();
 
   if (pendingDelete) clearTimeout(pendingDelete.timeoutId);
@@ -808,10 +897,11 @@ async function deleteWithUndo(id) {
     hideToast();
   }, UNDO_WINDOW_MS);
 
-  pendingDelete = { record, timeoutId };
+  pendingDelete = { record, logId, timeoutId };
 
   showUndoToast(`Deleted ${record.guest || "record"}`, async () => {
     clearTimeout(pendingDelete.timeoutId);
+    await retractLogEntry(pendingDelete.logId);
     const restored = await insertRecord(pendingDelete.record);
     if (restored) {
       highlightId = String(restored.id);
@@ -871,7 +961,9 @@ function wireFollowupTable() {
       editingFollowupId = null;
       await renderFollowup();
     } else if (btn.classList.contains("delete-btn")) {
-      await deleteWithUndo(id);
+      const reason = promptDeleteReason();
+      if (reason === null) return;
+      await deleteWithUndo(id, reason);
     } else if (btn.classList.contains("complete-btn")) {
       await moveToCompleted(id);
     } else if (btn.classList.contains("flag-btn")) {
@@ -909,7 +1001,9 @@ function wireCompletedTable() {
       editingCompletedId = null;
       await renderCompleted();
     } else if (btn.classList.contains("delete-btn")) {
-      await deleteWithUndo(id);
+      const reason = promptDeleteReason();
+      if (reason === null) return;
+      await deleteWithUndo(id, reason);
     } else if (btn.classList.contains("revert-btn")) {
       await moveToFollowup(id);
     } else if (btn.classList.contains("flag-btn")) {
@@ -931,6 +1025,12 @@ function wireCompletedTable() {
       e.target.checked = false;
       return;
     }
+    const record = await fetchRecordById(id);
+    if (!record) {
+      e.target.checked = false;
+      return;
+    }
+    await logOutcomeAction(record, "documented_in_hmis", null);
     const ok = await deleteRecord(id);
     if (ok) await renderCompleted();
   });
@@ -1288,6 +1388,7 @@ document.addEventListener("DOMContentLoaded", () => {
     sessionStorage.removeItem(HIGHLIGHT_STORAGE_KEY);
   }
 
+  wireCurrentUserButton();
   wireFollowupTable();
   wireCompletedTable();
   wireFollowupLaterToggle();
