@@ -21,13 +21,72 @@ reaches the dashboard at all, which is a worse failure than one that reaches
 it and gets a second look. Flags are printed to the run log either way.
 """
 
+import os
 import sys
+from datetime import datetime, timezone
 
 from anthropic import Anthropic
 
 import extract_outcomes as ex
 import outlook_pipeline as op
 import supabase_writer as sw
+
+
+def _write_github_summary(
+    lookback_days: int,
+    fetched: int,
+    skipped: int,
+    dry_run: bool,
+    written_rows: list[dict],
+    flagged: list[tuple[str, list[str]]],
+) -> None:
+    """Appends a per-run digest to the GitHub Actions run summary page
+    (GITHUB_STEP_SUMMARY - a markdown file GitHub renders on the run's
+    Summary tab) so "what did the pipeline add" is a short digest Chris can
+    glance at, not something he has to go dig out of the raw step log.
+    See brief.md's V1 output requirement. No-op outside Actions (the env
+    var isn't set locally), and never raises - a summary-writing problem
+    shouldn't fail an otherwise-successful run.
+    """
+    summary_path = os.environ.get("GITHUB_STEP_SUMMARY")
+    if not summary_path:
+        return
+
+    lines = []
+    when = datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M UTC")
+    lines.append(f"## Outcome Tracker run — {when}{' (dry run)' if dry_run else ''}")
+    lines.append("")
+    lines.append(f"Fetched {fetched} message(s) from the last {lookback_days} day(s), skipped {skipped} already processed.")
+    lines.append("")
+
+    verb = "Would write" if dry_run else "Added"
+    if written_rows:
+        lines.append(f"### {verb} ({len(written_rows)})")
+        lines.append("")
+        lines.append("| Guest | Classification | Type | Status |")
+        lines.append("|---|---|---|---|")
+        for row in written_rows:
+            guest = row["guest_name"] or row["guest_id"] or "(unnamed)"
+            lines.append(f"| {guest} | {row['classification']} | {row['type']} | {row['status']} |")
+        lines.append("")
+    else:
+        lines.append(f"{verb}: none.")
+        lines.append("")
+
+    if flagged:
+        lines.append(f"### Flagged for review ({len(flagged)})")
+        lines.append("")
+        for message_id, flags in flagged:
+            lines.append(f"- `{message_id}`")
+            for flag in flags:
+                lines.append(f"  - {flag}")
+        lines.append("")
+
+    try:
+        with open(summary_path, "a", encoding="utf-8") as f:
+            f.write("\n".join(lines) + "\n")
+    except OSError as e:
+        print(f"Couldn't write GITHUB_STEP_SUMMARY: {e}")
 
 
 def run(lookback_days: int = op.DEFAULT_LOOKBACK_DAYS, dry_run: bool = False) -> None:
@@ -49,6 +108,8 @@ def run(lookback_days: int = op.DEFAULT_LOOKBACK_DAYS, dry_run: bool = False) ->
 
     total_written = 0
     total_flagged = 0
+    written_rows = []  # for the GitHub Actions run summary - see _write_github_summary
+    flagged_entries = []
 
     # messages (and therefore new_messages) come back newest-received-first
     # from op.fetch_recent_messages (orderby receivedDateTime desc). Insert
@@ -94,21 +155,33 @@ def run(lookback_days: int = op.DEFAULT_LOOKBACK_DAYS, dry_run: bool = False) ->
             print("VERIFY: FLAGGED (writing anyway - see module docstring)")
             for flag in flags:
                 print(f"  - {flag}")
+            flagged_entries.append((msg["internet_message_id"], flags))
         else:
             print("VERIFY: PASS")
 
         rows = [sw.outcome_to_row(o, msg["internet_message_id"]) for o in outcomes]
         if dry_run:
             print(f"DRY RUN: would insert {len(rows)} outcome(s), not writing")
+            written_rows.extend(rows)
         else:
             inserted = sw.insert_outcomes(rows)
             print(f"Inserted {len(inserted)} outcome(s).")
             total_written += len(inserted)
+            written_rows.extend(inserted)
             sw.mark_message_processed(msg["internet_message_id"], outcomes_found=len(inserted))
 
     print(
         f"\nDone. {len(new_messages)} new message(s) processed, "
         f"{total_written} outcome(s) written, {total_flagged} message(s) flagged."
+    )
+
+    _write_github_summary(
+        lookback_days,
+        len(messages),
+        skipped,
+        dry_run,
+        written_rows,
+        flagged_entries,
     )
 
 
