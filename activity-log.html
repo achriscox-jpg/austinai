@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <title>Reconcile — Outcomes Review Tool</title>
+  <title>Activity Log — Outcomes Review Tool</title>
   <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Crect x='1' y='1' width='22' height='22' rx='6' fill='white' stroke='%23d8d8d8' stroke-width='1'/%3E%3Cpolygon points='5,9 12,4 19,9 16,9 12,6.5 8,9' fill='%23dc3c2d'/%3E%3Crect x='7' y='10' width='2.5' height='9' fill='%231c6ea4'/%3E%3Crect x='14.5' y='10' width='2.5' height='9' fill='%231c6ea4'/%3E%3Crect x='9.5' y='13.5' width='5' height='2' fill='%231c6ea4'/%3E%3C/svg%3E">
   <link rel="stylesheet" href="style.css">
 </head>
@@ -22,58 +22,48 @@
   <nav>
     <a href="index.html">Outcomes</a>
     <a href="add.html">Add Outcome</a>
-    <a href="reconcile.html" class="active">Reconcile</a>
-    <a href="activity-log.html">Activity Log</a>
+    <a href="reconcile.html">Reconcile</a>
+    <a href="activity-log.html" class="active">Activity Log</a>
   </nav>
+  <button type="button" id="current-user-btn" class="current-user-btn" title="Click to change"></button>
 </header>
 
 <main>
   <section class="card">
-    <div class="card-header"><h2>Reconcile Against a Report</h2></div>
-    <p class="hint" style="display: block; margin-bottom: 14px;">
-      Upload a CSV export of already-logged outcomes (e.g. a redacted report run from HMIS) to check for
-      possible duplicates already sitting in Needs Follow-up or Completed. This is a heads-up, not an
-      automatic match — nothing gets moved, checked, or deleted. Nothing from this file is saved anywhere;
-      it's used once for this comparison and then discarded.
-    </p>
-    <p class="hint" style="display: block; margin-bottom: 14px;">
-      Expected columns (any order, header names roughly matching): <strong>Classification</strong>
-      and <strong>Type</strong> are required; at least one of <strong>Guest ID</strong> or
-      <strong>Guest Name</strong> is required too (both are fine — ID is used when present,
-      Guest Name only as a fallback for rows with no ID).
-    </p>
-    <form id="reconcile-form" class="record-form">
-      <label>
-        Reconciliation report (.csv)
-        <input type="file" id="reconcile-file" name="reconcile-file" accept=".csv,.xls,.xlsx">
-      </label>
-      <div class="form-actions">
-        <button type="submit" class="btn-primary">Compare</button>
-      </div>
-    </form>
-    <p id="reconcile-message" class="hint" style="display: block; margin-top: 12px;"></p>
-  </section>
-
-  <section class="card" id="reconcile-results-section" style="display: none;">
     <div class="card-header">
-      <h2>Possible Matches</h2>
-      <span class="count-badge" id="reconcile-count">0</span>
+      <h2>Activity Log</h2>
+      <span class="count-badge" id="activity-log-count">0</span>
+      <span class="hint">records removed from the tables above, via delete or documented-in-HMIS — newest first</span>
+      <label class="sort-control">
+        Show
+        <select id="activity-log-filter">
+          <option value="all" selected>All activity</option>
+          <option value="deleted">Deleted only</option>
+          <option value="documented_in_hmis">Documented in HMIS only</option>
+        </select>
+      </label>
     </div>
     <div class="table-scroll">
-      <table id="reconcile-table">
+      <table id="activity-log-table">
         <thead>
           <tr>
-            <th>Table</th>
+            <th>When</th>
+            <th>Action</th>
             <th>ID</th>
             <th>Guest</th>
             <th>Classification</th>
             <th>Type</th>
-            <th>Date</th>
+            <th>Case Manager</th>
+            <th>By</th>
           </tr>
         </thead>
         <tbody></tbody>
       </table>
     </div>
+    <p class="empty-state" id="activity-log-empty">
+      <svg width="16" height="16" viewBox="0 0 16 16" aria-hidden="true"><path d="M2 5h12M2 8h12M2 11h8" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg>
+      <span id="activity-log-empty-text">No activity logged yet.</span>
+    </p>
   </section>
 </main>
 

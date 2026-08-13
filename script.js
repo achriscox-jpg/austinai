@@ -1380,6 +1380,124 @@ async function runReconcileComparison(csvText, messageEl, resultsSection, result
   });
 }
 
+// ---------- activity-log.html: outcomes_log ----------
+
+let activityLogFilterValue = "all";
+
+const ACTION_LABELS = {
+  deleted: "Deleted",
+  documented_in_hmis: "Documented in HMIS",
+};
+
+function formatLogTimestamp(iso) {
+  if (!iso) return "";
+  const d = new Date(iso);
+  if (Number.isNaN(d.getTime())) return iso;
+  return d.toLocaleString(undefined, {
+    year: "numeric",
+    month: "short",
+    day: "numeric",
+    hour: "numeric",
+    minute: "2-digit",
+  });
+}
+
+async function fetchActivityLog() {
+  const { data, error } = await supabaseClient
+    .from("outcomes_log")
+    .select("*")
+    .order("created_at", { ascending: false });
+  if (error) {
+    console.error("Failed to load activity log:", error);
+    return [];
+  }
+  return data;
+}
+
+async function renderActivityLog() {
+  const tableEl = document.getElementById("activity-log-table");
+  if (!tableEl) return;
+  const allEntries = await fetchActivityLog();
+  const entries =
+    activityLogFilterValue === "all" ? allEntries : allEntries.filter((e) => e.action === activityLogFilterValue);
+
+  const tbody = tableEl.querySelector("tbody");
+  const emptyEl = document.getElementById("activity-log-empty");
+  const emptyTextEl = document.getElementById("activity-log-empty-text");
+  const countEl = document.getElementById("activity-log-count");
+  if (countEl) countEl.textContent = entries.length;
+  tbody.innerHTML = "";
+
+  if (entries.length === 0) {
+    tableEl.closest(".table-scroll").style.display = "none";
+    emptyEl.style.display = "block";
+    if (emptyTextEl) {
+      emptyTextEl.textContent =
+        allEntries.length === 0 ? "No activity logged yet." : "Nothing matches this filter.";
+    }
+    return;
+  }
+  tableEl.closest(".table-scroll").style.display = "block";
+  emptyEl.style.display = "none";
+
+  entries.forEach((e) => {
+    const badgeClass = e.action === "deleted" ? "badge-deleted" : "badge-documented";
+    const actionLabel = ACTION_LABELS[e.action] || e.action;
+
+    const tr = document.createElement("tr");
+    tr.innerHTML = `
+      <td>${escapeHtml(formatLogTimestamp(e.created_at))}</td>
+      <td><span class="badge ${badgeClass}">${escapeHtml(actionLabel)}</span></td>
+      <td><span class="id-tag">${escapeHtml(e.guest_id || "")}</span></td>
+      <td>${escapeHtml(e.guest_name || "")}</td>
+      <td><span class="badge">${escapeHtml(e.classification || "")}</span></td>
+      <td><span class="type-text">${escapeHtml(e.type || "")}</span></td>
+      <td>${escapeHtml(e.case_manager || "")}</td>
+      <td>${escapeHtml(e.by_name || "")}</td>`;
+    tbody.appendChild(tr);
+
+    // Only show detail rows that actually have content - unlike the
+    // editable tables, this is a read-only log, so there's no reason to
+    // render an empty "Reason" row for a documented-in-HMIS entry that
+    // never had one. Whichever row ends up last (could be the main row
+    // itself, if none of the three have content) gets record-end so the
+    // divider between this entry and the next one always lands somewhere.
+    const detailRows = [];
+    if (e.reason) {
+      const reasonTr = document.createElement("tr");
+      reasonTr.className = "detail-row";
+      reasonTr.innerHTML = detailCellHtml("Reason", "reason", e.reason, false, 8);
+      tbody.appendChild(reasonTr);
+      detailRows.push(reasonTr);
+    }
+    if (e.notes) {
+      const notesTr = document.createElement("tr");
+      notesTr.className = "detail-row";
+      notesTr.innerHTML = detailCellHtml("Notes", "notes", e.notes, false, 8);
+      tbody.appendChild(notesTr);
+      detailRows.push(notesTr);
+    }
+    if (e.source_email) {
+      const sourceTr = document.createElement("tr");
+      sourceTr.className = "detail-row";
+      sourceTr.innerHTML = detailCellHtml("Source Email", "source_email", e.source_email, false, 8);
+      tbody.appendChild(sourceTr);
+      detailRows.push(sourceTr);
+    }
+    (detailRows.length > 0 ? detailRows[detailRows.length - 1] : tr).classList.add("record-end");
+  });
+}
+
+function wireActivityLog() {
+  const filterEl = document.getElementById("activity-log-filter");
+  if (!filterEl) return;
+  filterEl.addEventListener("change", async () => {
+    activityLogFilterValue = filterEl.value;
+    await renderActivityLog();
+  });
+  renderActivityLog();
+}
+
 // ---------- init ----------
 
 document.addEventListener("DOMContentLoaded", () => {
@@ -1398,4 +1516,5 @@ document.addEventListener("DOMContentLoaded", () => {
   wireAddForm();
   wireDragAndDrop();
   wireReconcileForm();
+  wireActivityLog();
 });
