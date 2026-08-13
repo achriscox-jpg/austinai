@@ -660,6 +660,10 @@ form.record-form .form-actions a:hover {
   pointer-events: auto;
 }
 
+.toast.warning {
+  border-left: 4px solid var(--dup);
+}
+
 .toast .undo-btn {
   background: none;
   border: none;

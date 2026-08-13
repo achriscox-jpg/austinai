@@ -854,18 +854,38 @@ function getToastEl() {
 
 function hideToast() {
   const toast = document.getElementById("toast");
-  if (toast) toast.classList.remove("visible");
+  if (toast) {
+    clearTimeout(toast._warningTimeoutId);
+    toast.classList.remove("visible", "warning");
+  }
 }
 
-function showUndoToast(message, onUndo) {
+function showUndoToast(message, onUndo, warn = false) {
   const toast = getToastEl();
+  clearTimeout(toast._warningTimeoutId);
+  toast.classList.toggle("warning", warn);
   toast.innerHTML = `<span></span><button class="undo-btn" type="button">Undo</button>`;
   toast.querySelector("span").textContent = message;
   toast.classList.add("visible");
   toast.querySelector(".undo-btn").onclick = () => {
-    toast.classList.remove("visible");
+    toast.classList.remove("visible", "warning");
     onUndo();
   };
+}
+
+// A quieter, non-undoable toast for surfacing a failure that shouldn't
+// block whatever the user was doing (right now: an outcomes_log write
+// failing) but also shouldn't be invisible - console.error alone means
+// nobody ever notices a missing audit-log entry.
+function showWarningToast(message, durationMs = 6000) {
+  const toast = getToastEl();
+  clearTimeout(toast._warningTimeoutId);
+  toast.innerHTML = `<span></span>`;
+  toast.querySelector("span").textContent = message;
+  toast.classList.add("visible", "warning");
+  toast._warningTimeoutId = setTimeout(() => {
+    toast.classList.remove("visible", "warning");
+  }, durationMs);
 }
 
 // Returns the trimmed reason text, "" if left blank, or null if the user
@@ -900,16 +920,21 @@ async function deleteWithUndo(id, reason) {
 
   pendingDelete = { record, logId, timeoutId };
 
-  showUndoToast(`Deleted ${record.guest || "record"}`, async () => {
-    clearTimeout(pendingDelete.timeoutId);
-    await retractLogEntry(pendingDelete.logId);
-    const restored = await insertRecord(pendingDelete.record);
-    if (restored) {
-      highlightId = String(restored.id);
-      await renderAll();
-    }
-    pendingDelete = null;
-  });
+  const baseMessage = `Deleted ${record.guest || "record"}`;
+  showUndoToast(
+    logId ? baseMessage : `${baseMessage} — activity log entry failed to save`,
+    async () => {
+      clearTimeout(pendingDelete.timeoutId);
+      await retractLogEntry(pendingDelete.logId);
+      const restored = await insertRecord(pendingDelete.record);
+      if (restored) {
+        highlightId = String(restored.id);
+        await renderAll();
+      }
+      pendingDelete = null;
+    },
+    !logId
+  );
 }
 
 function wireFollowupLaterToggle() {
@@ -1031,9 +1056,12 @@ function wireCompletedTable() {
       e.target.checked = false;
       return;
     }
-    await logOutcomeAction(record, "documented_in_hmis", null);
+    const logId = await logOutcomeAction(record, "documented_in_hmis", null);
     const ok = await deleteRecord(id);
-    if (ok) await renderCompleted();
+    if (ok) {
+      await renderCompleted();
+      if (!logId) showWarningToast(`Marked ${record.guest || "record"} as documented in HMIS, but the activity log entry failed to save — see console.`);
+    }
   });
 }
 
