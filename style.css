@@ -443,6 +443,18 @@ td.actions button {
   color: var(--muted);
 }
 
+.badge-deleted {
+  background: var(--danger-bg);
+  border-color: var(--danger);
+  color: var(--danger);
+}
+
+.badge-documented {
+  background: var(--accent-tint);
+  border-color: var(--accent);
+  color: var(--accent);
+}
+
 /* ---------- Buttons ---------- */
 
 button {
