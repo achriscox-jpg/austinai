@@ -28,8 +28,16 @@ ENV_FILE = Path(__file__).parent / ".env"
 # How far back to look each run. Deliberately generous (not just "since the
 # last run") so a missed or failed run doesn't lose messages - duplicate
 # protection is the dedup layer's job (source_message_id in Supabase), not
-# this window's.
-DEFAULT_LOOKBACK_DAYS = 3
+# this window's. Widening this doesn't meaningfully raise Claude token
+# usage in steady state - message_already_processed() filters out anything
+# already handled BEFORE it reaches extraction/verify, and that record
+# never expires. What does scale with this number is the Outlook fetch
+# itself (full body of every message in the window, every run, regardless
+# of whether it gets filtered out a moment later) - 7 days keeps that cheap
+# while covering a bad weekend or a slow-to-notice failure. This is now a
+# second-layer safety net; the primary one is the GitHub Actions
+# failed-workflow email notification (confirmed working 2026-08-13).
+DEFAULT_LOOKBACK_DAYS = 7
 
 # Only these three tools are allowlisted on the auth config; listed here too
 # so a typo'd tool slug fails fast and locally instead of round-tripping to
