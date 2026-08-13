@@ -1225,24 +1225,25 @@ async function runReconcileComparison(csvText, messageEl, resultsSection, result
   ]);
   const all = [...followups, ...completedRecords];
 
-  // Clear flags from a previous reconciliation run before applying fresh
-  // ones -- a new upload supersedes the last one, nothing lingers.
+  // Additive only - a reconciliation report may cover only part of the
+  // outcomes universe (a date range, a partial HMIS export, a small test
+  // file), so a record not mentioned in THIS upload doesn't mean "not a
+  // match" - it may just mean "not in this particular report." Clearing
+  // possible_match for everything not matched here would silently erase
+  // real flags set by an earlier, more complete upload. Only ever set
+  // possible_match to true for what matches; a wrongly-flagged record gets
+  // cleared individually via its own dismiss button (dismissPossibleMatch),
+  // not by a later upload superseding it in bulk.
   const matchedIds = [];
-  const unmatchedIds = [];
   const matches = [];
   all.forEach((r) => {
     const rec = { guestId: r.guestId, guestName: r.guest, classification: r.classification, type: r.type };
     if (reportRecords.some((rep) => outcomesMightMatch(rec, rep))) {
       matchedIds.push(r.id);
       matches.push({ ...r, sourceTable: r.status === STATUS.completed ? "Completed" : "Needs Follow-up" });
-    } else {
-      unmatchedIds.push(r.id);
     }
   });
 
-  if (unmatchedIds.length > 0) {
-    await supabaseClient.from("outcomes").update({ possible_match: false }).in("id", unmatchedIds);
-  }
   if (matchedIds.length > 0) {
     await supabaseClient.from("outcomes").update({ possible_match: true }).in("id", matchedIds);
   }
