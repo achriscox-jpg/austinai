@@ -399,6 +399,7 @@ async function logOutcomeAction(record, action, reason) {
       date_identified: record.date || null,
       case_manager: record.caseManager || null,
       source_email: record.sourceSnippet || null,
+      notes: record.notes || null,
     })
     .select()
     .single();
