@@ -27,6 +27,12 @@ mapToDb() in script.js by accident:
     source_id         -> source_message_id  (the Outlook message id this
                          outcome came from - the dedup key, never shown in
                          the dashboard UI)
+    review_notes      -> review_notes  (the verify step's flags for the
+                         WHOLE EMAIL this outcome came from, joined into one
+                         string - NULL when verify passed clean. Powers the
+                         dashboard's per-record confidence badge alongside
+                         blank classification/type - see script.js's
+                         confidenceBadgeHtml.)
     (not set)         -> notes, next_action_date, possible_match
                          (dashboard-only fields; automation never writes
                          these - notes and next_action_date are left out of
@@ -77,8 +83,18 @@ def _client() -> tuple[httpx.Client, str]:
     return httpx.Client(base_url=f"{url}/rest/v1", headers=headers, timeout=15.0), key
 
 
-def outcome_to_row(outcome: dict, source_id: str) -> dict:
-    """Map one process_email() outcome record to an outcomes table row."""
+def outcome_to_row(outcome: dict, source_id: str, review_notes: str = "") -> dict:
+    """Map one process_email() outcome record to an outcomes table row.
+
+    review_notes is the verify step's flags for the EMAIL this outcome came
+    from (not per-outcome - the verify call checks a whole email's outcomes
+    together and returns one flags list, not a flag-to-outcome mapping), so
+    every outcome from a flagged email gets the same note. Coarser than
+    per-record attribution, but honest: if verify wasn't sure about anything
+    in this batch, treating the whole batch as worth a second look is the
+    same under-claim-rather-than-over-claim posture used everywhere else in
+    this pipeline. Empty string (-> NULL) when verify passed clean.
+    """
     status = outcome.get("status", "")
     if status not in STATUS_MAP:
         raise ValueError(f"Unrecognized status {status!r} - expected one of {list(STATUS_MAP)}")
@@ -93,6 +109,7 @@ def outcome_to_row(outcome: dict, source_id: str) -> dict:
         "case_manager": outcome.get("case_manager") or None,
         "source_email": outcome.get("supporting_text") or None,
         "source_message_id": source_id or None,
+        "review_notes": review_notes or None,
     }
 
 

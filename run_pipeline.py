@@ -14,11 +14,14 @@ other directly:
     supabase_writer.py    - dedup check + write
 
 On verification flags: the second-pass verify step in extract_outcomes.py
-only flags possible problems, it doesn't invalidate a record. There is no
-"needs review" column in the outcomes table today, so flagged outcomes are
-still written - silently dropping them would mean a real outcome never
-reaches the dashboard at all, which is a worse failure than one that reaches
-it and gets a second look. Flags are printed to the run log either way.
+only flags possible problems, it doesn't invalidate a record - flagged
+outcomes are still written, since silently dropping them would mean a real
+outcome never reaches the dashboard at all, which is a worse failure than
+one that reaches it and gets a second look. Flags are printed to the run
+log AND persisted to the outcomes.review_notes column (added by
+schema/add-review-notes.sql - run that once before this reads/writes it)
+so the dashboard can show a per-record confidence badge instead of that
+information only ever existing in a log nobody's watching.
 """
 
 import sys
@@ -89,15 +92,20 @@ def run(lookback_days: int = op.DEFAULT_LOOKBACK_DAYS, dry_run: bool = False) ->
             continue
 
         flags = verification.get("flags", [])
+        review_notes = ""
         if flags or not verification.get("pass", True):
             total_flagged += 1
+            review_notes = "; ".join(flags) if flags else "Verify step did not pass, but returned no specific flags."
             print("VERIFY: FLAGGED (writing anyway - see module docstring)")
             for flag in flags:
                 print(f"  - {flag}")
         else:
             print("VERIFY: PASS")
 
-        rows = [sw.outcome_to_row(o, msg["internet_message_id"]) for o in outcomes]
+        # Same review_notes text on every outcome from this email - the
+        # verify call checks the whole batch together, not outcome-by-outcome
+        # (see outcome_to_row's docstring).
+        rows = [sw.outcome_to_row(o, msg["internet_message_id"], review_notes=review_notes) for o in outcomes]
         if dry_run:
             print(f"DRY RUN: would insert {len(rows)} outcome(s), not writing")
         else:

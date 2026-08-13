@@ -247,6 +247,39 @@ function flagCellHtml(r, isDuplicate) {
   return `<td class="flag-cell">${parts.join("")}</td>`;
 }
 
+// Always-visible per-record confidence badge - a coarse category, not a
+// numeric score (LLM self-reported confidence numbers aren't reliably
+// calibrated; a category is honest about what the signal actually is).
+// Derived entirely from decisions the model already made and told us about
+// - no extra AI call, nothing new to calibrate:
+//   - blank Classification/Type: the extraction step itself wasn't
+//     confident which exact taxonomy value applied (see
+//     extraction-rules.md rule 4) - it said so by leaving the field blank
+//     rather than guessing.
+//   - reviewNotes present: the verify step flagged something in the email
+//     this record came from (see extract_outcomes.py's process_email and
+//     supabase_writer.py's outcome_to_row - one verify call covers a whole
+//     email's outcomes together, so this is per-email, not strictly
+//     per-record).
+// Manually added/edited records have no reviewNotes and typically have
+// Classification/Type filled in by the person entering them, so they read
+// as "Solid" by default - there's nothing for the model to have been
+// unsure about since a human supplied the values directly.
+function confidenceBadgeHtml(r) {
+  const worthAGlance = !!r.reviewNotes || !r.classification || !r.type;
+  if (worthAGlance) {
+    const reasons = [];
+    if (!r.classification || !r.type) {
+      reasons.push("Classification and/or Type weren't confidently determined during extraction.");
+    }
+    if (r.reviewNotes) {
+      reasons.push(r.reviewNotes);
+    }
+    return `<td><span class="confidence-badge confidence-glance" title="${escapeAttr(reasons.join(" "))}">Worth a glance</span></td>`;
+  }
+  return `<td><span class="confidence-badge confidence-solid" title="Classification, Type, and source text all checked out">Solid</span></td>`;
+}
+
 // Small inline icons for buttons -- stroke="currentColor" so each one
 // automatically matches its button's text color (blue, red, neutral).
 const ICONS = {
@@ -280,6 +313,7 @@ function mapFromDb(row) {
     possibleMatch: !!row.possible_match,
     nextActionDate: row.next_action_date || "",
     createdAt: row.created_at || "",
+    reviewNotes: row.review_notes || "",
   };
 }
 
@@ -295,6 +329,7 @@ function mapToDb(record) {
     notes: record.notes || null,
     possible_match: !!record.possibleMatch,
     next_action_date: record.nextActionDate || null,
+    review_notes: record.reviewNotes || null,
   };
 }
 
@@ -353,8 +388,8 @@ let editingCompletedId = null;
 // Column counts for each table's main row -- used as the colspan on the
 // full-width Source Email / Notes rows below it, so those rows span every
 // column instead of one.
-const FOLLOWUP_COLSPAN = 9; // flag, ID, Guest, Classification, Type, Date, Follow-up Due, Case Manager, Actions
-const COMPLETED_COLSPAN = 9; // + Documented in HMIS
+const FOLLOWUP_COLSPAN = 10; // flag, ID, Guest, Classification, Type, Date, Follow-up Due, Case Manager, Confidence, Actions
+const COMPLETED_COLSPAN = 10; // + Documented in HMIS
 
 // Follow-ups with a Next Action Date further out than this stay off the
 // dashboard (collapsed into a "later" count) until they're within this
@@ -523,6 +558,7 @@ async function renderFollowup() {
     const groupClass = i % 2 === 0 ? "row-group-odd" : "row-group-even";
     const editing = editingFollowupId === String(r.id);
     const flagHtml = flagCellHtml(r, duplicateIds.has(String(r.id)));
+    const confidenceHtml = confidenceBadgeHtml(r);
 
     const tr = document.createElement("tr");
     tr.className = groupClass;
@@ -537,6 +573,7 @@ async function renderFollowup() {
         <td><input type="date" data-field="date" value="${escapeAttr(r.date)}"></td>
         <td><input type="date" data-field="nextActionDate" value="${escapeAttr(r.nextActionDate)}"></td>
         <td><input type="text" data-field="caseManager" value="${escapeAttr(r.caseManager)}"></td>
+        ${confidenceHtml}
         <td class="actions">
           <button class="save-btn btn-primary" data-id="${r.id}">${ICONS.check}Save</button>
           <button class="cancel-btn" data-id="${r.id}">${ICONS.x}Cancel</button>
@@ -551,6 +588,7 @@ async function renderFollowup() {
         <td>${escapeHtml(r.date)}</td>
         <td>${escapeHtml(r.nextActionDate)}</td>
         <td>${escapeHtml(r.caseManager)}</td>
+        ${confidenceHtml}
         <td class="actions">
           <button class="complete-btn" data-id="${r.id}">${ICONS.check}Move to Completed</button>
           <button class="edit-btn" data-id="${r.id}">${ICONS.pencil}Edit</button>
@@ -618,6 +656,7 @@ async function renderCompleted() {
     const groupClass = i % 2 === 0 ? "row-group-odd" : "row-group-even";
     const editing = editingCompletedId === String(r.id);
     const flagHtml = flagCellHtml(r, duplicateIds.has(String(r.id)));
+    const confidenceHtml = confidenceBadgeHtml(r);
 
     const tr = document.createElement("tr");
     tr.className = groupClass;
@@ -632,6 +671,7 @@ async function renderCompleted() {
         <td><input type="date" data-field="date" value="${escapeAttr(r.date)}"></td>
         <td><input type="text" data-field="caseManager" value="${escapeAttr(r.caseManager)}"></td>
         <td class="checkbox-cell">&mdash;</td>
+        ${confidenceHtml}
         <td class="actions">
           <button class="save-btn btn-primary" data-id="${r.id}">${ICONS.check}Save</button>
           <button class="cancel-btn" data-id="${r.id}">${ICONS.x}Cancel</button>
@@ -648,6 +688,7 @@ async function renderCompleted() {
         <td class="checkbox-cell">
           <input type="checkbox" class="verified-checkbox" data-id="${r.id}">
         </td>
+        ${confidenceHtml}
         <td class="actions">
           <button class="revert-btn" data-id="${r.id}">${ICONS.undo}Move to Follow-up</button>
           <button class="edit-btn" data-id="${r.id}">${ICONS.pencil}Edit</button>
