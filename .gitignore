@@ -7,6 +7,9 @@ Outcomes.xls
 extraction-rules.md
 session-*-summary.md
 
+# Personal files that don't belong in the repo
+Builder Workbook*.docx
+
 # Python build artifacts
 __pycache__/
 *.pyc
